@@ -20,6 +20,13 @@ const loginSchema = z.object({
   path: ['email'],
 });
 
+const isProduction = process.env.NODE_ENV === 'production';
+const authCookieOptions = {
+  httpOnly: true,
+  sameSite: isProduction ? 'none' as const : 'lax' as const,
+  secure: isProduction,
+};
+
 export async function registerUser(req: Request, res: Response, next: NextFunction) {
   try {
     const data = registerSchema.parse(req.body);
@@ -45,11 +52,7 @@ export async function registerUser(req: Request, res: Response, next: NextFuncti
     });
 
     const token = signJwt({ userId: user.id, role: user.role });
-    res.cookie('token', token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
+    res.cookie('token', token, authCookieOptions);
 
     return res.status(201).json({
       success: true,
@@ -81,11 +84,7 @@ export async function loginUser(req: Request, res: Response, next: NextFunction)
     }
 
     const token = signJwt({ userId: user.id, role: user.role });
-    res.cookie('token', token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
+    res.cookie('token', token, authCookieOptions);
 
     return res.json({
       success: true,
@@ -98,7 +97,7 @@ export async function loginUser(req: Request, res: Response, next: NextFunction)
 }
 
 export async function logoutUser(_req: Request, res: Response) {
-  res.clearCookie('token');
+  res.clearCookie('token', authCookieOptions);
   return res.json({ success: true, message: 'Logged out successfully' });
 }
 
