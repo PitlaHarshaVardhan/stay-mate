@@ -6,3 +6,4 @@ backend/dist
 frontend/dist
 coverage
 .DS_Store
+.neon
