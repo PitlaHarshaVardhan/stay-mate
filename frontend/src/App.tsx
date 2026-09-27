@@ -120,7 +120,7 @@ export default function App() {
           <Route path="/connections" element={user ? <ConnectionsPage userId={user.id} connections={connections} onAccept={handleAccept} onReject={handleReject} onDelete={handleDelete} /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />
           <Route path="/profile" element={user ? <ProfilePage user={user} /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />
           <Route path="/preferences" element={user ? <PreferencesPage /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />
-          <Route path="/matches" element={user ? <MatchingPage userId={user.id} /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />
+          <Route path="/matches" element={user ? <MatchingPage userId={user.id} onConnectionCreated={refreshConnections} /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />
           <Route path="/groups" element={user ? <GroupsPage userId={user.id} /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />
           <Route path="/messages" element={user ? <ChatPanel user={user} /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />
         </Routes>
@@ -447,16 +447,23 @@ function PreferencesPage() {
   );
 }
 
-function MatchingPage({ userId }: { userId: string }) {
+function MatchingPage({ userId, onConnectionCreated }: { userId: string; onConnectionCreated: () => Promise<void> }) {
   const [matches, setMatches] = useState<any[]>([]);
+  const [connections, setConnections] = useState<ConnectionItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [requestMessage, setRequestMessage] = useState('');
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
       try {
-        const response = await api.getMatchingPeople(userId);
+        const [response, connectionsResponse] = await Promise.all([
+          api.getMatchingPeople(userId),
+          api.getConnections().catch(() => ({ data: [] as ConnectionItem[] })),
+        ]);
         setMatches(response.data ?? []);
+        setConnections(connectionsResponse.data ?? []);
         setSelectedMatchId((response.data ?? [])[0]?.user?.id ?? null);
       } catch {
         setMatches([]);
@@ -468,6 +475,37 @@ function MatchingPage({ userId }: { userId: string }) {
   }, [userId]);
 
   const selectedMatch = matches.find((match) => match.user.id === selectedMatchId) ?? matches[0] ?? null;
+  const existingConnection = selectedMatch
+    ? connections.find((connection) =>
+      (connection.senderId === userId && connection.receiverId === selectedMatch.user.id)
+      || (connection.senderId === selectedMatch.user.id && connection.receiverId === userId))
+    : undefined;
+  const isOutgoingRequest = existingConnection?.senderId === userId;
+
+  const sendConnectionRequest = async () => {
+    if (!selectedMatch || existingConnection || sendingRequest) return;
+
+    setSendingRequest(true);
+    setRequestMessage('');
+    try {
+      const response = await api.createConnection(selectedMatch.user.id);
+      if (response.data) {
+        setConnections((current) => [response.data as ConnectionItem, ...current]);
+      }
+      setRequestMessage(response.message ?? 'Connection request sent.');
+      await onConnectionCreated();
+    } catch (error) {
+      setRequestMessage(error instanceof Error ? error.message : 'Could not send connection request.');
+      try {
+        const response = await api.getConnections();
+        setConnections(response.data ?? []);
+      } catch {
+        // Keep the current connection state if refresh fails.
+      }
+    } finally {
+      setSendingRequest(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -486,7 +524,10 @@ function MatchingPage({ userId }: { userId: string }) {
                 <button
                   key={match.user.id}
                   type="button"
-                  onClick={() => setSelectedMatchId(match.user.id)}
+                  onClick={() => {
+                    setSelectedMatchId(match.user.id);
+                    setRequestMessage('');
+                  }}
                   className={`rounded-2xl border bg-white p-5 text-left shadow-sm transition ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-200 hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-md'}`}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -535,7 +576,21 @@ function MatchingPage({ userId }: { userId: string }) {
                 <div><span className="font-semibold text-slate-800">Lifestyle:</span> {selectedMatch.preference.smokingPreference}, {selectedMatch.preference.drinkingPreference}, {selectedMatch.preference.foodPreference}</div>
               </div>
 
-              <button type="button" className="mt-6 w-full rounded-xl bg-indigo-600 px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-indigo-500">Send connection request</button>
+              {existingConnection?.status === 'PENDING' && !isOutgoingRequest ? (
+                <Link to="/connections" className="mt-6 block w-full rounded-xl bg-amber-100 px-4 py-2.5 text-center font-semibold text-amber-800 transition hover:bg-amber-200">
+                  Review incoming request
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void sendConnectionRequest()}
+                  disabled={sendingRequest || Boolean(existingConnection)}
+                  className="mt-6 w-full rounded-xl bg-indigo-600 px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  {sendingRequest ? 'Sending request...' : existingConnection?.status === 'ACCEPTED' ? 'Connected' : existingConnection?.status === 'PENDING' ? 'Request pending' : existingConnection ? 'Request unavailable' : 'Send connection request'}
+                </button>
+              )}
+              {requestMessage && <p role="status" className="mt-3 text-sm text-slate-600">{requestMessage}</p>}
             </div>
           )}
         </div>

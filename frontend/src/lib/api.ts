@@ -51,6 +51,10 @@ export const api = {
     body: JSON.stringify(payload),
   }),
   getMatchingPeople: (userId: string) => request<any[]>(`/api/matching/people?userId=${encodeURIComponent(userId)}`),
+  createConnection: (receiverId: string) => request<any>('/api/connections', {
+    method: 'POST',
+    body: JSON.stringify({ receiverId }),
+  }),
   getGroups: () => request<any[]>('/api/groups'),
   createGroup: (payload: any) => request<any>('/api/groups', {
     method: 'POST',
