@@ -2,6 +2,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: '.env.local', override: true });
+}
+
 export const config = {
   port: Number(process.env.PORT ?? 4000),
   databaseUrl: process.env.DATABASE_URL ?? '',

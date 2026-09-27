@@ -10,7 +10,9 @@
     "lint": "eslint . --ext .ts",
     "test": "jest --runInBand",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate": "node scripts/prisma-migrate-local.cjs",
+    "prisma:status": "node scripts/prisma-migrate-local.cjs status",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
