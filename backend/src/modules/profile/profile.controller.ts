@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../../prisma/client';
 
 const profileSchema = z.object({
-  profilePhoto: z.string().optional(),
+  profilePhoto: z.string().max(900_000).optional(),
   age: z.number().int().min(18).max(80).optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
   occupationType: z.enum(['STUDENT', 'EMPLOYEE', 'INTERN', 'OTHER']).optional(),

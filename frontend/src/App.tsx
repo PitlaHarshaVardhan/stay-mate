@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Menu, X } from 'lucide-react';
 import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import AuthForm from './components/AuthForm';
 import ChatPanel from './components/ChatPanel';
@@ -17,6 +18,7 @@ export default function App() {
   const [connections, setConnections] = useState<ConnectionItem[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const navigate = useNavigate();
 
   const loadUser = async () => {
@@ -87,10 +89,11 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <Link to="/" className="text-xl font-bold tracking-tight text-indigo-600">StayMate</Link>
-          <nav className="flex flex-wrap items-center justify-end gap-2 text-sm text-slate-600">
-            <NavLink to="/" end className={({ isActive }) => navigationLinkClass(isActive)}>Home</NavLink>
+        <div className="mx-auto max-w-6xl px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <Link to="/" className="shrink-0 text-xl font-bold tracking-tight text-indigo-600">StayMate</Link>
+            <nav className="hidden items-center justify-end gap-1 text-sm lg:flex">
+              <NavLink to="/" end className={({ isActive }) => navigationLinkClass(isActive)}>Home</NavLink>
             {user ? (
               <>
                 <NavLink to="/connections" className={({ isActive }) => navigationLinkClass(isActive)}>Connections</NavLink>
@@ -99,7 +102,7 @@ export default function App() {
                 <NavLink to="/matches" className={({ isActive }) => navigationLinkClass(isActive)}>Matches</NavLink>
                 <NavLink to="/groups" className={({ isActive }) => navigationLinkClass(isActive)}>Groups</NavLink>
                 <NavLink to="/messages" className={({ isActive }) => navigationLinkClass(isActive)}>Messages</NavLink>
-                <span className="ml-1 rounded-full bg-indigo-50 px-3 py-1.5 font-medium text-slate-700">Hi, {user.name}</span>
+                <span className="ml-1 max-w-32 truncate rounded-full bg-indigo-50 px-3 py-1.5 font-medium text-slate-700 xl:max-w-44">{user.name}</span>
                 <button onClick={handleLogout} className="rounded-lg border border-slate-200 px-3 py-1.5 font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">Logout</button>
               </>
             ) : (
@@ -108,11 +111,43 @@ export default function App() {
                 <NavLink to="/register" className={({ isActive }) => navigationLinkClass(isActive)}>Register</NavLink>
               </>
             )}
-          </nav>
+            </nav>
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 lg:hidden"
+              aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileNavOpen}
+              onClick={() => setMobileNavOpen((open) => !open)}
+            >
+              {mobileNavOpen ? <X size={19} /> : <Menu size={19} />}
+            </button>
+          </div>
+          {mobileNavOpen && (
+            <nav className="mt-3 grid grid-cols-2 gap-1 border-t border-slate-100 pt-3 text-sm lg:hidden">
+              <NavLink to="/" end onClick={() => setMobileNavOpen(false)} className={({ isActive }) => navigationLinkClass(isActive)}>Home</NavLink>
+              {user ? (
+                <>
+                  <NavLink to="/connections" onClick={() => setMobileNavOpen(false)} className={({ isActive }) => navigationLinkClass(isActive)}>Connections</NavLink>
+                  <NavLink to="/profile" onClick={() => setMobileNavOpen(false)} className={({ isActive }) => navigationLinkClass(isActive)}>Profile</NavLink>
+                  <NavLink to="/preferences" onClick={() => setMobileNavOpen(false)} className={({ isActive }) => navigationLinkClass(isActive)}>Preferences</NavLink>
+                  <NavLink to="/matches" onClick={() => setMobileNavOpen(false)} className={({ isActive }) => navigationLinkClass(isActive)}>Matches</NavLink>
+                  <NavLink to="/groups" onClick={() => setMobileNavOpen(false)} className={({ isActive }) => navigationLinkClass(isActive)}>Groups</NavLink>
+                  <NavLink to="/messages" onClick={() => setMobileNavOpen(false)} className={({ isActive }) => navigationLinkClass(isActive)}>Messages</NavLink>
+                  <span className="truncate px-3 py-2 font-medium text-slate-500">{user.name}</span>
+                  <button onClick={() => { setMobileNavOpen(false); void handleLogout(); }} className="rounded-full px-3 py-2 text-left font-medium text-slate-600 hover:bg-slate-100">Logout</button>
+                </>
+              ) : (
+                <>
+                  <NavLink to="/login" onClick={() => setMobileNavOpen(false)} className={({ isActive }) => navigationLinkClass(isActive)}>Login</NavLink>
+                  <NavLink to="/register" onClick={() => setMobileNavOpen(false)} className={({ isActive }) => navigationLinkClass(isActive)}>Register</NavLink>
+                </>
+              )}
+            </nav>
+          )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8 md:py-10">
+      <main className="mx-auto max-w-6xl px-4 py-5 sm:py-7 lg:py-9">
         <Routes>
           <Route path="/" element={<LandingPage user={user} />} />
           <Route path="/login" element={user ? <HomeDashboard user={user} connections={connections} notifications={notifications} onRefresh={refreshConnections} /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />
@@ -248,6 +283,7 @@ function ProfilePage({ user }: { user: User }) {
     bio: '',
   });
   const [saving, setSaving] = useState(false);
+  const [photoError, setPhotoError] = useState('');
 
   useEffect(() => {
     void (async () => {
@@ -290,16 +326,58 @@ function ProfilePage({ user }: { user: User }) {
     }
   };
 
+  const onPhotoSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setPhotoError('');
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('Choose an image file.');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setPhotoError('Choose an image smaller than 8 MB.');
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 384 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Image processing is unavailable in this browser.');
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+
+      const compressedPhoto = canvas.toDataURL('image/jpeg', 0.72);
+      if (compressedPhoto.length > 900_000) {
+        throw new Error('This image could not be compressed enough. Try another photo.');
+      }
+      setForm((current) => ({ ...current, profilePhoto: compressedPhoto }));
+    } catch (error) {
+      setPhotoError(error instanceof Error ? error.message : 'Could not read this image.');
+    } finally {
+      event.target.value = '';
+    }
+  };
+
   return (
-    <div className="mx-auto max-w-2xl rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-      <h2 className="text-3xl font-bold text-slate-900">Your profile</h2>
+    <div className="mx-auto max-w-2xl rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
+      <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Your profile</h2>
       <p className="mt-2 text-slate-600">Tell others more about who you are and what you’re looking for.</p>
       <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-        <div className="mb-6 flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div className="mb-6 flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:gap-4 sm:p-4">
           <AvatarPreview name={user.name} photo={form.profilePhoto} size="lg" />
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-700">Profile photo URL</label>
-            <input value={form.profilePhoto} onChange={(e) => setForm({ ...form, profilePhoto: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2" placeholder="https://..." />
+          <div className="min-w-0 flex-1">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="profile-photo">Profile photo</label>
+            <input id="profile-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void onPhotoSelected(event)} className="mt-1 block w-full min-w-0 text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:font-semibold file:text-indigo-700 file:ring-1 file:ring-slate-200 hover:file:bg-indigo-50" />
+            <p className="mt-1 text-xs text-slate-500">Images are resized before saving.</p>
+            {form.profilePhoto && <button type="button" onClick={() => setForm((current) => ({ ...current, profilePhoto: '' }))} className="mt-1 text-xs font-medium text-rose-700 hover:underline">Remove photo</button>}
+            {photoError && <p role="alert" className="mt-1 text-xs text-rose-700">{photoError}</p>}
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -451,6 +529,8 @@ function MatchingPage({ userId, onConnectionCreated }: { userId: string; onConne
   const [matches, setMatches] = useState<any[]>([]);
   const [connections, setConnections] = useState<ConnectionItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [needsPreferences, setNeedsPreferences] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [sendingRequest, setSendingRequest] = useState(false);
   const [requestMessage, setRequestMessage] = useState('');
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
@@ -458,6 +538,15 @@ function MatchingPage({ userId, onConnectionCreated }: { userId: string; onConne
   useEffect(() => {
     void (async () => {
       try {
+        const preferenceResponse = await api.getPreferences();
+        if (!preferenceResponse.data) {
+          setNeedsPreferences(true);
+          setMatches([]);
+          setConnections([]);
+          return;
+        }
+
+        setNeedsPreferences(false);
         const [response, connectionsResponse] = await Promise.all([
           api.getMatchingPeople(userId),
           api.getConnections().catch(() => ({ data: [] as ConnectionItem[] })),
@@ -465,9 +554,10 @@ function MatchingPage({ userId, onConnectionCreated }: { userId: string; onConne
         setMatches(response.data ?? []);
         setConnections(connectionsResponse.data ?? []);
         setSelectedMatchId((response.data ?? [])[0]?.user?.id ?? null);
-      } catch {
+      } catch (error) {
         setMatches([]);
         setSelectedMatchId(null);
+        setLoadError(error instanceof Error ? error.message : 'Could not load matches.');
       } finally {
         setLoading(false);
       }
@@ -509,15 +599,23 @@ function MatchingPage({ userId, onConnectionCreated }: { userId: string; onConne
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <h2 className="text-3xl font-bold text-slate-900">Match recommendations</h2>
+      <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
+        <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Match recommendations</h2>
         <p className="mt-2 text-slate-600">People most compatible with your move preferences and lifestyle.</p>
       </div>
-      {loading ? <div className="rounded-2xl bg-white p-6 text-slate-600">Loading matches...</div> : (
+      {loading ? <div className="rounded-xl bg-white p-4 text-slate-600 sm:p-6">Loading matches...</div> : needsPreferences ? (
+        <section className="rounded-xl border border-indigo-100 bg-white p-5 shadow-sm sm:p-7">
+          <h3 className="text-lg font-semibold text-slate-900">Set your preferences to see matches</h3>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">Add your destination, budget, move-in date, and living preferences first. We’ll use them to find compatible roommates.</p>
+          <Link to="/preferences" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500">Enter preferences</Link>
+        </section>
+      ) : loadError ? (
+        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{loadError}</div>
+      ) : (
         <div className="grid gap-6 lg:grid-cols-[1.3fr,0.7fr]">
           <div className="grid gap-4 md:grid-cols-2">
             {matches.length === 0 ? (
-              <div className="rounded-2xl bg-white p-6 text-slate-600 ring-1 ring-slate-200 md:col-span-2">No matches found yet. Save your preferences first.</div>
+              <div className="rounded-xl bg-white p-4 text-slate-600 ring-1 ring-slate-200 md:col-span-2">No compatible profiles found yet.</div>
             ) : matches.map((match) => {
               const isSelected = selectedMatch?.user?.id === match.user.id;
               return (
