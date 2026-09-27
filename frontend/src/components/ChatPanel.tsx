@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
+import Pagination, { PAGE_SIZE } from './Pagination';
 
 type ChatUser = {
   id: string;
@@ -17,6 +18,7 @@ export default function ChatPanel({ user }: ChatProps) {
   const [messages, setMessages] = useState<any[]>([]);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
+  const [conversationPage, setConversationPage] = useState(1);
 
   const loadConversations = async () => {
     const response = await api.getConversations();
@@ -53,6 +55,12 @@ export default function ChatPanel({ user }: ChatProps) {
     () => conversations.find((conversation) => conversation.id === selectedConversationId) ?? null,
     [conversations, selectedConversationId],
   );
+  const totalConversationPages = Math.ceil(conversations.length / PAGE_SIZE);
+  const currentConversationPage = Math.min(conversationPage, Math.max(1, totalConversationPages));
+  const visibleConversations = conversations.slice(
+    (currentConversationPage - 1) * PAGE_SIZE,
+    currentConversationPage * PAGE_SIZE,
+  );
 
   const otherMembers = useMemo(() => {
     if (!selectedConversation) return [];
@@ -85,7 +93,7 @@ export default function ChatPanel({ user }: ChatProps) {
           {conversations.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">No conversations yet.</div>
           ) : (
-            conversations.map((conversation) => {
+            visibleConversations.map((conversation) => {
               const conversationUsers = (conversation.members ?? []).map((member: any) => member.user?.name ?? 'User').filter(Boolean);
               const recipients = conversationUsers.filter((name: string) => name !== user.name).join(', ') || 'Direct chat';
               const lastMessage = conversation.messages?.[0]?.content ?? 'New chat';
@@ -102,6 +110,9 @@ export default function ChatPanel({ user }: ChatProps) {
               );
             })
           )}
+        </div>
+        <div className="mt-4">
+          <Pagination page={currentConversationPage} totalItems={conversations.length} onPageChange={setConversationPage} label="Conversations" />
         </div>
       </aside>
 

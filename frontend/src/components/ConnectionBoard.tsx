@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import Pagination, { PAGE_SIZE } from './Pagination';
 import type { ConnectionItem } from '../types';
 
 type ConnectionBoardProps = {
@@ -95,6 +96,11 @@ function AvatarPreview({ name, photo, size = 'md' }: { name: string; photo?: str
 }
 
 function Section({ title, items, renderCard }: { title: string; items: ConnectionItem[]; renderCard: (item: ConnectionItem) => JSX.Element }) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.ceil(items.length / PAGE_SIZE);
+  const currentPage = Math.min(page, Math.max(1, totalPages));
+  const visibleItems = items.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
@@ -105,7 +111,10 @@ function Section({ title, items, renderCard }: { title: string; items: Connectio
       {items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">No {title.toLowerCase()} connections yet.</div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">{items.map(renderCard)}</div>
+        <>
+          <div className="grid gap-4 md:grid-cols-2">{visibleItems.map(renderCard)}</div>
+          <Pagination page={currentPage} totalItems={items.length} onPageChange={setPage} label={`${title} connections`} />
+        </>
       )}
     </section>
   );

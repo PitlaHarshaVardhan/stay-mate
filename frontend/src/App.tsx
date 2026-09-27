@@ -4,6 +4,7 @@ import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import AuthForm from './components/AuthForm';
 import ChatPanel from './components/ChatPanel';
 import ConnectionBoard from './components/ConnectionBoard';
+import Pagination, { PAGE_SIZE } from './components/Pagination';
 import { api } from './lib/api';
 import type { ConnectionItem, User } from './types';
 
@@ -534,6 +535,7 @@ function MatchingPage({ userId, onConnectionCreated }: { userId: string; onConne
   const [sendingRequest, setSendingRequest] = useState(false);
   const [requestMessage, setRequestMessage] = useState('');
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [matchPage, setMatchPage] = useState(1);
 
   useEffect(() => {
     void (async () => {
@@ -565,6 +567,9 @@ function MatchingPage({ userId, onConnectionCreated }: { userId: string; onConne
   }, [userId]);
 
   const selectedMatch = matches.find((match) => match.user.id === selectedMatchId) ?? matches[0] ?? null;
+  const totalMatchPages = Math.ceil(matches.length / PAGE_SIZE);
+  const currentMatchPage = Math.min(matchPage, Math.max(1, totalMatchPages));
+  const visibleMatches = matches.slice((currentMatchPage - 1) * PAGE_SIZE, currentMatchPage * PAGE_SIZE);
   const existingConnection = selectedMatch
     ? connections.find((connection) =>
       (connection.senderId === userId && connection.receiverId === selectedMatch.user.id)
@@ -613,10 +618,11 @@ function MatchingPage({ userId, onConnectionCreated }: { userId: string; onConne
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{loadError}</div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1.3fr,0.7fr]">
-          <div className="grid gap-4 md:grid-cols-2">
-            {matches.length === 0 ? (
-              <div className="rounded-xl bg-white p-4 text-slate-600 ring-1 ring-slate-200 md:col-span-2">No compatible profiles found yet.</div>
-            ) : matches.map((match) => {
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              {matches.length === 0 ? (
+                <div className="rounded-xl bg-white p-4 text-slate-600 ring-1 ring-slate-200 md:col-span-2">No compatible profiles found yet.</div>
+              ) : visibleMatches.map((match) => {
               const isSelected = selectedMatch?.user?.id === match.user.id;
               return (
                 <button
@@ -645,7 +651,18 @@ function MatchingPage({ userId, onConnectionCreated }: { userId: string; onConne
                   </div>
                 </button>
               );
-            })}
+              })}
+            </div>
+            <Pagination
+              page={currentMatchPage}
+              totalItems={matches.length}
+              onPageChange={(page) => {
+                setMatchPage(page);
+                setSelectedMatchId(matches[(page - 1) * PAGE_SIZE]?.user?.id ?? null);
+                setRequestMessage('');
+              }}
+              label="Match recommendations"
+            />
           </div>
 
           {selectedMatch && (
@@ -700,6 +717,7 @@ function MatchingPage({ userId, onConnectionCreated }: { userId: string; onConne
 function GroupsPage({ userId }: { userId: string }) {
   const [groups, setGroups] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [groupsPage, setGroupsPage] = useState(1);
   const [form, setForm] = useState({
     name: '',
     city: '',
@@ -729,6 +747,9 @@ function GroupsPage({ userId }: { userId: string }) {
     if (!term) return true;
     return [group.name, group.city, group.area, group.description].some((value) => String(value ?? '').toLowerCase().includes(term));
   });
+  const totalGroupPages = Math.ceil(filteredGroups.length / PAGE_SIZE);
+  const currentGroupPage = Math.min(groupsPage, Math.max(1, totalGroupPages));
+  const visibleGroups = filteredGroups.slice((currentGroupPage - 1) * PAGE_SIZE, currentGroupPage * PAGE_SIZE);
 
   const onCreate = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -785,7 +806,7 @@ function GroupsPage({ userId }: { userId: string }) {
           <h3 className="text-xl font-semibold text-slate-900">Available groups</h3>
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setGroupsPage(1); }}
             placeholder="Search by city, area or name"
             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm md:max-w-xs"
           />
@@ -793,7 +814,7 @@ function GroupsPage({ userId }: { userId: string }) {
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           {filteredGroups.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-200 p-4 text-slate-500 md:col-span-2">No matching groups yet.</div>
-          ) : filteredGroups.map((group) => (
+          ) : visibleGroups.map((group) => (
             <div key={group.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-white">
                 <div>
@@ -817,6 +838,9 @@ function GroupsPage({ userId }: { userId: string }) {
               </div>
             </div>
           ))}
+        </div>
+        <div className="mt-4">
+          <Pagination page={currentGroupPage} totalItems={filteredGroups.length} onPageChange={setGroupsPage} label="Groups" />
         </div>
       </div>
     </div>
