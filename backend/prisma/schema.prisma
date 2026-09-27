@@ -1,0 +1,614 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  PROPERTY_OWNER
+}
+
+enum OccupationType {
+  STUDENT
+  EMPLOYEE
+  INTERN
+  OTHER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum RoomType {
+  SINGLE
+  DOUBLE
+  TRIPLE
+  FOUR_PLUS
+  ANY
+}
+
+enum SmokingPreference {
+  SMOKER
+  NON_SMOKER
+  NO_PREFERENCE
+}
+
+enum DrinkingPreference {
+  DRINKER
+  NON_DRINKER
+  NO_PREFERENCE
+}
+
+enum FoodPreference {
+  VEG
+  NON_VEG
+  VEGAN
+  ANY
+}
+
+enum SleepSchedule {
+  EARLY
+  LATE
+  FLEXIBLE
+}
+
+enum CleanlinessPreference {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum GenderPreference {
+  MALE
+  FEMALE
+  ANY
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+}
+
+enum GroupStatus {
+  LOOKING
+  FULL
+  CLOSED
+}
+
+enum GroupMemberRole {
+  ADMIN
+  MEMBER
+}
+
+enum GroupMemberStatus {
+  ACTIVE
+  LEFT
+  REMOVED
+}
+
+enum ReportReason {
+  SPAM
+  FAKE_PROFILE
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  FRAUD
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWING
+  RESOLVED
+  REJECTED
+}
+
+enum NotificationType {
+  CONNECTION_REQUEST
+  CONNECTION_ACCEPTED
+  CONNECTION_REJECTED
+  GROUP_JOIN_REQUEST
+  GROUP_JOIN_ACCEPTED
+  GROUP_JOIN_REJECTED
+  NEW_MESSAGE
+  REVIEW_RECEIVED
+  VERIFICATION_UPDATE
+  REPORT_UPDATE
+}
+
+enum VerificationType {
+  PHONE
+  EMAIL
+  COLLEGE
+  EMPLOYMENT
+  IDENTITY
+}
+
+enum VerificationStatusValue {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  SYSTEM
+}
+
+enum ReviewTargetType {
+  USER
+  PROPERTY
+}
+
+enum PropertyType {
+  PG
+  HOSTEL
+  FLAT
+  ROOM
+  CO_LIVING
+  APARTMENT
+}
+
+enum PropertyStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DRAFT
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum RoomStatus {
+  AVAILABLE
+  PARTIALLY_AVAILABLE
+  FULL
+  INACTIVE
+}
+
+enum PropertyInterestStatus {
+  PENDING
+  CONTACTED
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum PropertyAmenityType {
+  WIFI
+  AC
+  FAN
+  BED
+  WARDROBE
+  TABLE
+  CHAIR
+  ATTACHED_BATHROOM
+  HOT_WATER
+  LAUNDRY
+  PARKING
+  POWER_BACKUP
+  HOUSEKEEPING
+  FOOD
+  SECURITY
+  CCTV
+  GYM
+  COMMON_AREA
+}
+
+model User {
+  id            String           @id @default(uuid())
+  name          String
+  email         String           @unique
+  phone         String           @unique
+  passwordHash  String
+  role          UserRole         @default(USER)
+  isVerified    Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  profile       Profile?
+  preference    Preference?
+  sentConnections Connection[] @relation("SentConnections")
+  receivedConnections Connection[] @relation("ReceivedConnections")
+  ownedGroups   Group[]          @relation("OwnedGroups")
+  groupMembers  GroupMember[]
+  notifications Notification[]
+  reportsSent   Report[]         @relation("ReportsSent")
+  reportsOnUser Report[]         @relation("ReportsOnUser")
+  blockedBy     BlockedUser[]    @relation("BlockedBy")
+  blockedUsers  BlockedUser[]    @relation("BlockedUsers")
+  groupJoinRequests GroupJoinRequest[]
+  ownedProperties Property[]     @relation("PropertyOwner")
+  savedProperties SavedProperty[] @relation("SavedPropertyUser")
+  propertyInterests PropertyInterest[] @relation("PropertyInterestUser")
+  verifications Verification[]
+  conversationMemberships ConversationMember[]
+  sentMessages Message[]
+  propertyReviews PropertyReview[] @relation("PropertyReviewUser")
+  reviewsWritten UserReview[] @relation("UserReviewReviewer")
+  reviewsReceived UserReview[] @relation("UserReviewReviewee")
+
+  @@index([email])
+  @@index([phone])
+}
+
+model Profile {
+  id             String         @id @default(uuid())
+  userId         String         @unique
+  user           User           @relation(fields: [userId], references: [id])
+  profilePhoto   String?
+  age            Int?
+  gender         Gender?
+  occupationType OccupationType?
+  college        String?
+  company        String?
+  bio            String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Preference {
+  id                     String                  @id @default(uuid())
+  userId                 String                  @unique
+  user                   User                    @relation(fields: [userId], references: [id])
+  city                   String
+  area                   String
+  budgetMin              Int
+  budgetMax              Int
+  moveInDate             DateTime
+  roomType               RoomType
+  roommatesRequired      Int
+  smokingPreference      SmokingPreference
+  drinkingPreference     DrinkingPreference
+  foodPreference         FoodPreference
+  sleepSchedule          SleepSchedule
+  cleanlinessPreference  CleanlinessPreference
+  genderPreference       GenderPreference
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  @@index([city])
+  @@index([area])
+  @@index([moveInDate])
+  @@index([budgetMin, budgetMax])
+}
+
+model Connection {
+  id         String           @id @default(uuid())
+  senderId   String
+  sender     User             @relation("SentConnections", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User             @relation("ReceivedConnections", fields: [receiverId], references: [id])
+  status     ConnectionStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+}
+
+model Group {
+  id            String         @id @default(uuid())
+  ownerId       String
+  owner         User           @relation("OwnedGroups", fields: [ownerId], references: [id])
+  name          String
+  city          String
+  area          String
+  budgetMin     Int
+  budgetMax     Int
+  moveInDate    DateTime
+  targetMembers Int
+  description   String?
+  status        GroupStatus    @default(LOOKING)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  members       GroupMember[]
+  requests      GroupJoinRequest[]
+
+  @@index([city, area])
+  @@index([status])
+  @@index([moveInDate])
+}
+
+model GroupMember {
+  id        String            @id @default(uuid())
+  groupId   String
+  group     Group             @relation(fields: [groupId], references: [id])
+  userId    String
+  user      User              @relation(fields: [userId], references: [id])
+  role      GroupMemberRole   @default(MEMBER)
+  status    GroupMemberStatus @default(ACTIVE)
+  joinedAt  DateTime          @default(now())
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+model GroupJoinRequest {
+  id        String           @id @default(uuid())
+  groupId   String
+  group     Group            @relation(fields: [groupId], references: [id])
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  message   String?
+  status    ConnectionStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model BlockedUser {
+  id        String   @id @default(uuid())
+  blockerId String
+  blocker   User     @relation("BlockedUsers", fields: [blockerId], references: [id])
+  blockedId String
+  blocked   User     @relation("BlockedBy", fields: [blockedId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model Verification {
+  id               String                 @id @default(uuid())
+  userId           String
+  user             User                   @relation(fields: [userId], references: [id])
+  type             VerificationType
+  status           VerificationStatusValue @default(PENDING)
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  rejectionReason  String?
+  verifiedAt       DateTime?
+  expiresAt        DateTime?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Conversation {
+  id        String              @id @default(uuid())
+  type      String
+  createdBy String
+  groupId   String?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  members   ConversationMember[]
+  messages  Message[]
+
+  @@index([createdBy])
+  @@index([groupId])
+}
+
+model ConversationMember {
+  id            String        @id @default(uuid())
+  conversationId String
+  conversation  Conversation   @relation(fields: [conversationId], references: [id])
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  joinedAt      DateTime       @default(now())
+  lastReadAt    DateTime?
+  isMuted       Boolean        @default(false)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id              String      @id @default(uuid())
+  conversationId  String
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+  senderId        String
+  sender          User        @relation(fields: [senderId], references: [id])
+  content        String
+  messageType    MessageType @default(TEXT)
+  replyToMessageId String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  deletedAt      DateTime?
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+model PropertyReview {
+  id         String   @id @default(uuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+  userId     String
+  user       User     @relation("PropertyReviewUser", fields: [userId], references: [id])
+  rating     Int
+  review     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([propertyId, userId])
+  @@index([propertyId])
+}
+
+model UserReview {
+  id         String   @id @default(uuid())
+  reviewerId String
+  reviewer   User     @relation("UserReviewReviewer", fields: [reviewerId], references: [id])
+  revieweeId String
+  reviewee   User     @relation("UserReviewReviewee", fields: [revieweeId], references: [id])
+  rating     Int
+  review     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([reviewerId])
+  @@index([revieweeId])
+}
+
+model Report {
+  id            String       @id @default(uuid())
+  reportedById  String
+  reportedBy    User         @relation("ReportsSent", fields: [reportedById], references: [id])
+  reportedUserId String?
+  reportedUser  User?        @relation("ReportsOnUser", fields: [reportedUserId], references: [id])
+  groupId       String?
+  reason        ReportReason
+  description   String?
+  status        ReportStatus @default(OPEN)
+  createdAt     DateTime     @default(now())
+
+  @@index([reportedById])
+  @@index([status])
+}
+
+model Property {
+  id                 String            @id @default(uuid())
+  ownerId            String
+  owner              User              @relation("PropertyOwner", fields: [ownerId], references: [id])
+  name               String
+  description        String?
+  propertyType       PropertyType
+  status            PropertyStatus    @default(DRAFT)
+  verificationStatus VerificationStatus @default(PENDING)
+  address            String?
+  city               String
+  area               String
+  locality           String?
+  landmark           String?
+  latitude           Float?
+  longitude          Float?
+  genderAllowed      Gender?
+  contactPhone       String?
+  contactEmail       String?
+  smokingAllowed     Boolean           @default(false)
+  drinkingAllowed    Boolean           @default(false)
+  petsAllowed        Boolean           @default(false)
+  visitorsAllowed    Boolean           @default(true)
+  foodAvailable      Boolean           @default(false)
+  foodType           String?
+  curfewTime         String?
+  noticePeriod       String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  images            PropertyImage[]
+  rooms             PropertyRoom[]
+  interests         PropertyInterest[]
+  savedBy           SavedProperty[]
+  amenities         PropertyAmenity[]
+  reviews           PropertyReview[]
+
+  @@index([city])
+  @@index([area])
+  @@index([propertyType])
+  @@index([verificationStatus])
+  @@index([status])
+}
+
+model PropertyImage {
+  id          String   @id @default(uuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id])
+  url         String
+  publicId    String?
+  sortOrder   Int      @default(0)
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([propertyId])
+}
+
+model PropertyAmenity {
+  id         String        @id @default(uuid())
+  propertyId String
+  property   Property      @relation(fields: [propertyId], references: [id])
+  name       PropertyAmenityType
+  createdAt  DateTime      @default(now())
+
+  @@unique([propertyId, name])
+  @@index([propertyId])
+}
+
+model PropertyRoom {
+  id             String      @id @default(uuid())
+  propertyId     String
+  property       Property    @relation(fields: [propertyId], references: [id])
+  roomType       String
+  capacity       Int
+  occupied       Int         @default(0)
+  pricePerPerson Int
+  securityDeposit Int?
+  availableFrom  DateTime?
+  availableBeds  Int
+  amenities     String[]
+  status         RoomStatus  @default(AVAILABLE)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  interests      PropertyInterest[]
+
+  @@index([propertyId])
+  @@index([status])
+}
+
+model PropertyInterest {
+  id         String                 @id @default(uuid())
+  userId     String
+  user       User                   @relation("PropertyInterestUser", fields: [userId], references: [id])
+  propertyId String
+  property   Property               @relation(fields: [propertyId], references: [id])
+  roomId     String?
+  room       PropertyRoom?          @relation(fields: [roomId], references: [id])
+  groupId    String?
+  status     PropertyInterestStatus @default(PENDING)
+  message    String?
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+
+  @@index([userId])
+  @@index([propertyId])
+  @@index([groupId])
+}
+
+model SavedProperty {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation("SavedPropertyUser", fields: [userId], references: [id])
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+}
