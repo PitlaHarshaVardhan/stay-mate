@@ -4,6 +4,7 @@ import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
 import AuthForm from './components/AuthForm';
 import ChatPanel from './components/ChatPanel';
 import ConnectionBoard from './components/ConnectionBoard';
+import PasswordRecoveryPage from './components/PasswordRecoveryPage';
 import Pagination, { PAGE_SIZE } from './components/Pagination';
 import { api } from './lib/api';
 import type { ConnectionItem, User } from './types';
@@ -153,6 +154,8 @@ export default function App() {
           <Route path="/" element={<LandingPage user={user} />} />
           <Route path="/login" element={user ? <HomeDashboard user={user} connections={connections} notifications={notifications} onRefresh={refreshConnections} /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />
           <Route path="/register" element={user ? <HomeDashboard user={user} connections={connections} notifications={notifications} onRefresh={refreshConnections} /> : <AuthPage mode="register" onSuccess={onAuthSuccess} />} />
+          <Route path="/forgot-password" element={<PasswordRecoveryPage />} />
+          <Route path="/reset-password" element={<PasswordRecoveryPage />} />
           <Route path="/connections" element={user ? <ConnectionsPage userId={user.id} connections={connections} onAccept={handleAccept} onReject={handleReject} onDelete={handleDelete} /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />
           <Route path="/profile" element={user ? <ProfilePage user={user} /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />
           <Route path="/preferences" element={user ? <PreferencesPage /> : <AuthPage mode="login" onSuccess={onAuthSuccess} />} />

@@ -238,12 +238,25 @@ model User {
   verifications Verification[]
   conversationMemberships ConversationMember[]
   sentMessages Message[]
+  passwordResetTokens PasswordResetToken[]
   propertyReviews PropertyReview[] @relation("PropertyReviewUser")
   reviewsWritten UserReview[] @relation("UserReviewReviewer")
   reviewsReceived UserReview[] @relation("UserReviewReviewee")
 
   @@index([email])
   @@index([phone])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Profile {

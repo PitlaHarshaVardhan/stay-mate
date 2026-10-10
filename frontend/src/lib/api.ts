@@ -35,6 +35,14 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
+  requestPasswordReset: (email: string) => request<{ message: string }>('/api/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  }),
+  resetPassword: (token: string, password: string) => request<{ message: string }>('/api/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, password }),
+  }),
   register: (payload: { name: string; email: string; phone: string; password: string }) => request<{ id: string; name: string; email: string }>('/api/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),

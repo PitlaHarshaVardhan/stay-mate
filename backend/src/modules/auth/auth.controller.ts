@@ -1,8 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import * as argon2 from 'argon2';
+import { createHash, randomBytes } from 'crypto';
 import { prisma } from '../../prisma/client';
 import { signJwt } from '../../utils/jwt';
+import { sendPasswordResetEmail } from './password-reset-email';
 
 const registerSchema = z.object({
   name: z.string().min(1),
@@ -18,6 +20,15 @@ const loginSchema = z.object({
 }).refine((value) => Boolean(value.email || value.phone), {
   message: 'Either email or phone is required',
   path: ['email'],
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(32),
+  password: z.string().min(8).max(128),
 });
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -91,6 +102,65 @@ export async function loginUser(req: Request, res: Response, next: NextFunction)
       data: { id: user.id, name: user.name, email: user.email },
       message: 'Login successful',
     });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function requestPasswordReset(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email } = forgotPasswordSchema.parse(req.body);
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (user) {
+      const token = randomBytes(32).toString('hex');
+      const tokenHash = createHash('sha256').update(token).digest('hex');
+      const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+      await prisma.$transaction([
+        prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }),
+        prisma.passwordResetToken.create({ data: { userId: user.id, tokenHash, expiresAt } }),
+      ]);
+
+      const resetUrl = new URL('/reset-password', process.env.CLIENT_URL ?? 'http://localhost:5173');
+      resetUrl.searchParams.set('token', token);
+
+      try {
+        await sendPasswordResetEmail(user.email, resetUrl.toString());
+      } catch (error) {
+        console.error('Could not send password reset email:', error);
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: 'If an account exists for that email, password reset instructions will be sent shortly.',
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function resetPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { token, password } = resetPasswordSchema.parse(req.body);
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const resetRecord = await prisma.passwordResetToken.findUnique({ where: { tokenHash } });
+
+    if (!resetRecord || resetRecord.expiresAt <= new Date()) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_RESET_TOKEN', message: 'This password reset link is invalid or expired.' },
+      });
+    }
+
+    const passwordHash = await argon2.hash(password);
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: resetRecord.userId }, data: { passwordHash } }),
+      prisma.passwordResetToken.deleteMany({ where: { userId: resetRecord.userId } }),
+    ]);
+
+    return res.json({ success: true, message: 'Password reset successfully. You can now log in.' });
   } catch (error) {
     return next(error);
   }

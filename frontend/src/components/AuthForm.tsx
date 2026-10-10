@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 
 type AuthMode = 'login' | 'register';
@@ -109,6 +110,12 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
       >
         {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create account'}
       </button>
+
+      {mode === 'login' && (
+        <div className="text-right">
+          <Link to="/forgot-password" className="text-sm font-medium text-indigo-700 hover:underline">Forgot password?</Link>
+        </div>
+      )}
     </form>
   );
 }
