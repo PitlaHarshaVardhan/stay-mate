@@ -80,10 +80,21 @@ export const api = {
     method: 'DELETE',
   }),
   getNotifications: () => request<any[]>('/api/notifications'),
+  markNotificationRead: (id: string) => request<any>(`/api/notifications/${id}/read`, { method: 'PUT' }),
+  markAllNotificationsRead: () => request<any>('/api/notifications/read-all', { method: 'PUT' }),
+  getGroupRequests: (groupId?: string) => request<any[]>(groupId ? `/api/groups/${groupId}/requests` : '/api/groups/requests'),
+  handleGroupRequest: (groupId: string, requestId: string, status: 'ACCEPTED' | 'REJECTED') => request<any>(`/api/groups/${groupId}/requests/${requestId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  }),
   getConversations: () => request<any[]>('/api/chat'),
   getConversation: (conversationId: string) => request<{ messages: any[]; members: any[] }>(`/api/chat/${conversationId}`),
   sendMessage: (conversationId: string, content: string) => request<any>('/api/chat/messages', {
     method: 'POST',
     body: JSON.stringify({ conversationId, content }),
+  }),
+  createConversation: (otherUserId: string) => request<any>('/api/chat/conversations', {
+    method: 'POST',
+    body: JSON.stringify({ otherUserId }),
   }),
 };

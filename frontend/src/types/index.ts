@@ -5,6 +5,15 @@ export type User = {
   phone?: string;
   role?: string;
   isVerified?: boolean;
+  profile?: {
+    profilePhoto?: string | null;
+    occupationType?: string | null;
+    bio?: string | null;
+    age?: number | null;
+    gender?: string | null;
+    college?: string | null;
+    company?: string | null;
+  } | null;
 };
 
 export type ConnectionItem = {

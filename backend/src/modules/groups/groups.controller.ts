@@ -60,6 +60,7 @@ export async function listGroups(req: Request, res: Response, next: NextFunction
 
     const groups = await prisma.group.findMany({
       include: {
+        owner: { select: { id: true, name: true } },
         members: {
           where: { status: 'ACTIVE' },
           include: { user: { select: { id: true, name: true } } },

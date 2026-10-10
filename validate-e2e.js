@@ -68,10 +68,11 @@ async function request(path, options = {}, jar = jarA) {
   }, jarB);
   console.log('LOGIN_B', loginB.status, JSON.stringify(loginB.body));
 
+  const targetBId = loginB.body?.data?.id ?? regB.body?.data?.id;
   const createConn = await request('/api/connections', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ receiverId: regB.body.data.id })
+    body: JSON.stringify({ receiverId: targetBId })
   }, jarA);
   console.log('CREATE_CONN', createConn.status, JSON.stringify(createConn.body));
 

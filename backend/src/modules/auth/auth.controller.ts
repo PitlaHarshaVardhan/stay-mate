@@ -192,6 +192,15 @@ export async function getCurrentUser(req: Request, res: Response) {
         isVerified: true,
         createdAt: true,
         updatedAt: true,
+        profile: {
+          select: {
+            profilePhoto: true,
+            occupationType: true,
+            bio: true,
+            college: true,
+            company: true,
+          },
+        },
       },
     });
 
