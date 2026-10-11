@@ -1582,7 +1582,7 @@ function MatchingPage({
                             )
                           ) : match.compatibilityScore !== null ? (
                             <span className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 border border-rose-200/60">
-                              Not a match · {match.compatibilityScore}%
+                              {match.compatibilityScore}% match
                             </span>
                           ) : (
                             <span className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 border border-rose-200/60">
@@ -1661,7 +1661,7 @@ function MatchingPage({
                     )
                   ) : selectedMatch.compatibilityScore !== null ? (
                     <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700 border border-rose-200/60">
-                      Not a match · {selectedMatch.compatibilityScore}% overlap
+                      {selectedMatch.compatibilityScore}% compatibility
                     </span>
                   ) : (
                     <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700 border border-rose-200/60">

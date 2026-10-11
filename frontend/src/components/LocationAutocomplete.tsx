@@ -1,31 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { MapPin, Search } from 'lucide-react';
 
-type AddressComponent = {
-  longText: string;
-  types: string[];
-};
-
-type Place = {
-  addressComponents?: AddressComponent[];
-  formattedAddress?: string;
-  fetchFields: (request: { fields: string[] }) => Promise<void>;
-};
-
-type PlacePrediction = {
-  text: { toString: () => string };
-  toPlace: () => Place;
-};
-
-type PlaceSuggestion = { placePrediction?: PlacePrediction };
-
-type PlacesLibrary = {
-  AutocompleteSuggestion: {
-    fetchAutocompleteSuggestions: (request: {
-      input: string;
-      includedPrimaryTypes: string[];
-    }) => Promise<{ suggestions: PlaceSuggestion[] }>;
-  };
+type MapTilerFeature = {
+  place_name: string;
+  text: string;
+  place_type: string[];
+  context?: { id: string; text: string }[];
 };
 
 type LocationSelection = {
@@ -33,73 +13,38 @@ type LocationSelection = {
   area: string;
 };
 
-type GoogleMapsApi = {
-  maps: {
-    importLibrary: (name: string) => Promise<unknown>;
-  };
-};
+const CITY_PLACE_TYPES = new Set(['city', 'town', 'village', 'municipality', 'locality']);
 
-declare global {
-  interface Window {
-    google?: GoogleMapsApi;
-  }
+function findContextText(feature: MapTilerFeature, ...typePrefixes: string[]) {
+  return feature.context?.find((item) => typePrefixes.some((prefix) => item.id.startsWith(`${prefix}.`)))?.text;
 }
 
-let googleMapsScript: Promise<void> | null = null;
-
-function loadGoogleMaps(apiKey: string): Promise<void> {
-  if (window.google?.maps?.importLibrary) return Promise.resolve();
-  if (googleMapsScript) return googleMapsScript;
-
-  googleMapsScript = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => {
-      googleMapsScript = null;
-      reject(new Error('Google location search could not load.'));
-    };
-    document.head.appendChild(script);
-  });
-
-  return googleMapsScript;
-}
-
-function findAddressComponent(components: AddressComponent[], ...types: string[]) {
-  return components.find((component) => types.some((type) => component.types.includes(type)))?.longText;
+// MapTiler geocoding returns the matched place plus its containing admin areas
+// in `context`. Derive the same City + Area pair the form needs: the context
+// city when the pick is a neighborhood, or the picked place itself when it is
+// a city. Area falls back to city, matching the previous Google behavior.
+function deriveCityArea(feature: MapTilerFeature): LocationSelection | null {
+  const contextCity = findContextText(feature, 'city', 'town', 'village', 'municipality', 'locality');
+  const isCityFeature = feature.place_type.some((type) => CITY_PLACE_TYPES.has(type));
+  const city = contextCity ?? (isCityFeature ? feature.text : undefined);
+  if (!city) return null;
+  const area = feature.text && feature.text !== city ? feature.text : city;
+  return { city, area };
 }
 
 export default function LocationAutocomplete({ onSelect }: { onSelect: (location: LocationSelection) => void }) {
   const [query, setQuery] = useState('');
-  const [places, setPlaces] = useState<PlacesLibrary | null>(null);
-  const [suggestions, setSuggestions] = useState<PlacePrediction[]>([]);
+  const [suggestions, setSuggestions] = useState<MapTilerFeature[]>([]);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
   const selectedPlaceQuery = useRef<string | null>(null);
+  const apiKey = import.meta.env.VITE_MAPTILER_API_KEY;
 
   useEffect(() => {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
-      setStatus('Add a Google Maps API key to enable suggestions; City and Area can still be entered manually.');
-      return;
+      setStatus('Add a MapTiler API key to enable suggestions; City and Area can still be entered manually.');
     }
-
-    let active = true;
-    void loadGoogleMaps(apiKey)
-      .then(() => window.google?.maps.importLibrary('places'))
-      .then((library) => {
-        if (active && library) setPlaces(library as PlacesLibrary);
-      })
-      .catch((error: unknown) => {
-        if (active) setStatus(error instanceof Error ? error.message : 'Location suggestions are unavailable.');
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  }, [apiKey]);
 
   useEffect(() => {
     const trimmedQuery = query.trim();
@@ -109,26 +54,30 @@ export default function LocationAutocomplete({ onSelect }: { onSelect: (location
       setLoading(false);
       return;
     }
-    if (!places || trimmedQuery.length < 3) {
+    if (!apiKey || trimmedQuery.length < 3) {
       setSuggestions([]);
+      setLoading(false);
       return;
     }
 
     let active = true;
     setLoading(true);
+    const controller = new AbortController();
     const timeout = window.setTimeout(() => {
-      void places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
-        input: trimmedQuery,
-        includedPrimaryTypes: ['geocode'],
-      })
-        .then(({ suggestions: results }) => {
-          if (active) {
-            setSuggestions(results.flatMap((result) => result.placePrediction ? [result.placePrediction] : []));
-            setStatus('');
-          }
+      void fetch(
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(trimmedQuery)}.json?key=${encodeURIComponent(apiKey)}&limit=6&language=en`,
+        { signal: controller.signal },
+      )
+        .then((response) => (response.ok ? response.json() : Promise.reject(new Error('MapTiler request failed.'))))
+        .then((data: { features?: MapTilerFeature[] }) => {
+          if (!active) return;
+          setSuggestions(Array.isArray(data.features) ? data.features : []);
+          setStatus('');
         })
-        .catch(() => {
-          if (active) setStatus('Could not load location suggestions. You can still enter City and Area manually.');
+        .catch((error: unknown) => {
+          if (!active || (error instanceof DOMException && error.name === 'AbortError')) return;
+          setSuggestions([]);
+          setStatus('Location suggestions are unavailable right now.');
         })
         .finally(() => {
           if (active) setLoading(false);
@@ -137,35 +86,22 @@ export default function LocationAutocomplete({ onSelect }: { onSelect: (location
 
     return () => {
       active = false;
+      controller.abort();
       window.clearTimeout(timeout);
     };
-  }, [places, query]);
+  }, [apiKey, query]);
 
-  const selectPrediction = async (prediction: PlacePrediction) => {
-    setLoading(true);
-    setStatus('');
-    try {
-      const place = prediction.toPlace();
-      await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] });
-      const components = place.addressComponents ?? [];
-      const city = findAddressComponent(components, 'locality', 'postal_town', 'administrative_area_level_3', 'administrative_area_level_2');
-      const area = findAddressComponent(components, 'sublocality_level_1', 'neighborhood', 'sublocality', 'administrative_area_level_4', 'administrative_area_level_3') ?? city;
-
-      if (!city || !area) {
-        setStatus('Could not map that place to a City and Area. Please fill them in manually.');
-        return;
-      }
-
-      onSelect({ city, area });
-      const placeQuery = place.formattedAddress ?? prediction.text.toString();
-      selectedPlaceQuery.current = placeQuery;
-      setQuery(placeQuery);
-      setSuggestions([]);
-    } catch {
-      setStatus('Could not read that place. Please enter City and Area manually.');
-    } finally {
-      setLoading(false);
+  const selectFeature = (feature: MapTilerFeature) => {
+    const derived = deriveCityArea(feature);
+    if (!derived) {
+      setStatus('Could not map that place to a City and Area. Please fill them in manually.');
+      return;
     }
+    onSelect(derived);
+    selectedPlaceQuery.current = feature.place_name;
+    setQuery(feature.place_name);
+    setSuggestions([]);
+    setStatus('');
   };
 
   return (
@@ -183,7 +119,7 @@ export default function LocationAutocomplete({ onSelect }: { onSelect: (location
             if (event.key === 'Escape') setSuggestions([]);
             if (event.key === 'Enter' && suggestions[0]) {
               event.preventDefault();
-              void selectPrediction(suggestions[0]);
+              selectFeature(suggestions[0]);
             }
           }}
           role="combobox"
@@ -196,16 +132,16 @@ export default function LocationAutocomplete({ onSelect }: { onSelect: (location
       </div>
       {suggestions.length > 0 && (
         <ul id="location-suggestions" role="listbox" className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
-          {suggestions.map((prediction, index) => (
-            <li key={`${prediction.text.toString()}-${index}`} role="option" aria-selected="false">
+          {suggestions.map((feature, index) => (
+            <li key={`${feature.place_name}-${index}`} role="option" aria-selected="false">
               <button
                 type="button"
                 onMouseDown={(event) => event.preventDefault()}
-                onClick={() => void selectPrediction(prediction)}
+                onClick={() => selectFeature(feature)}
                 className="flex min-h-11 w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-indigo-50"
               >
                 <MapPin size={15} className="mt-0.5 shrink-0 text-indigo-600" />
-                <span>{prediction.text.toString()}</span>
+                <span>{feature.place_name}</span>
               </button>
             </li>
           ))}
