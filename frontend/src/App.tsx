@@ -1098,6 +1098,10 @@ function PreferencesPage({
   const [form, setForm] = useState({
     city: '',
     area: '',
+    // Map pin of the picked place (set by the autocomplete). Sent with the
+    // preference so matches can show real distance and distance-based scores.
+    latitude: null as number | null,
+    longitude: null as number | null,
     budgetMin: 8000,
     budgetMax: 20000,
     moveInDate: '',
@@ -1121,6 +1125,8 @@ function PreferencesPage({
           setForm({
             city: data.city ?? '',
             area: data.area ?? '',
+            latitude: typeof data.latitude === 'number' ? data.latitude : null,
+            longitude: typeof data.longitude === 'number' ? data.longitude : null,
             budgetMin: data.budgetMin ?? 8000,
             budgetMax: data.budgetMax ?? 20000,
             moveInDate: data.moveInDate ? new Date(data.moveInDate).toISOString().slice(0, 10) : '',
@@ -1158,14 +1164,18 @@ function PreferencesPage({
 
     setSaving(true);
     try {
+      const { latitude, longitude, ...payload } = form;
       await api.savePreferences({
-        ...form,
+        ...payload,
         city: form.city.trim(),
         area: form.area.trim(),
         budgetMin: Number(form.budgetMin),
         budgetMax: Number(form.budgetMax),
         roommatesRequired: Number(form.roommatesRequired),
         moveInDate: form.moveInDate ? new Date(form.moveInDate).toISOString() : new Date().toISOString(),
+        // Only send the pin when it came from a real suggestion pick; the
+        // backend treats it as optional so older saves stay valid.
+        ...(latitude !== null && longitude !== null ? { latitude, longitude } : {}),
       });
       showToast('Living preferences saved successfully! Matches updated.', 'success');
     } catch (error: any) {
@@ -1193,7 +1203,9 @@ function PreferencesPage({
         {/* City & Area */}
         <div className="grid gap-4 sm:grid-cols-2">
           <LocationAutocomplete
-            onSelect={({ city, area }) => setForm((current) => ({ ...current, city, area }))}
+            onSelect={({ city, area, latitude, longitude }) =>
+              setForm((current) => ({ ...current, city, area, latitude: latitude ?? null, longitude: longitude ?? null }))
+            }
           />
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
@@ -1554,7 +1566,7 @@ function MatchingPage({
             <div className="grid gap-4 sm:grid-cols-2">
               {matches.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500 sm:col-span-2">
-                  No roommates are available to show yet. Once other people set their preferences, they'll appear here — those that don't share your city, budget, or gender requirements are listed as "Not a match".
+                  No roommates are available to show yet. Once other people set their preferences, they'll appear here — everyone is listed, with people farther away scoring lower on location (shown as distance), and only budget or gender conflicts badged as "Not a match".
                 </div>
               ) : (
                 visibleMatches.map((match) => {
@@ -1626,6 +1638,11 @@ function MatchingPage({
                         <span className="flex items-center gap-1 font-medium text-slate-700">
                           <MapPin size={12} className="text-indigo-600" />
                           {match.preference.city}
+                          {typeof match.locationDistanceKm === 'number' && (
+                            <span className="ml-1 rounded-full bg-sky-50 px-2 py-0.5 font-semibold text-sky-700 border border-sky-200/60">
+                              {formatDistance(match.locationDistanceKm)} away
+                            </span>
+                          )}
                         </span>
                         <span className="font-semibold text-slate-900">
                           ₹{match.preference.budgetMin} - ₹{match.preference.budgetMax}
@@ -1709,6 +1726,11 @@ function MatchingPage({
                   <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700 border border-indigo-200/60">
                     {selectedMatch.preference.city}
                   </span>
+                  {typeof selectedMatch.locationDistanceKm === 'number' && (
+                    <span className="rounded-full bg-sky-50 px-3 py-1 text-sky-700 border border-sky-200/60">
+                      {formatDistance(selectedMatch.locationDistanceKm)} away
+                    </span>
+                  )}
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
                     {selectedMatch.preference.roomType}
                   </span>
@@ -1733,6 +1755,14 @@ function MatchingPage({
                 </div>
 
                 <div className="mt-4 space-y-2.5 rounded-2xl bg-white/60 p-4 border border-slate-100 text-xs text-slate-600">
+                  {typeof selectedMatch.locationDistanceKm === 'number' && (
+                    <div className="flex justify-between">
+                      <span className="font-medium text-slate-500">Distance apart:</span>
+                      <span className="font-semibold text-slate-800">
+                        {formatDistance(selectedMatch.locationDistanceKm)} away
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="font-medium text-slate-500">Move-in Date:</span>
                     <span className="font-semibold text-slate-800">
@@ -1822,6 +1852,13 @@ function matchingCriteria(match: any): any[] {
   return ((match?.breakdown as any[]) ?? []).filter(
     (component) => component.score !== null && component.score >= MATCHING_SCORE_THRESHOLD,
   );
+}
+
+/* Human-readable distance for match cards/details. Sub-10 km values keep one
+   decimal (commute-relevant precision); longer trips round to whole km. */
+export function formatDistance(km: number): string {
+  const rounded = km < 10 ? Math.round(km * 10) / 10 : Math.round(km);
+  return `${rounded} km`;
 }
 
 function CompatibilityBreakdown({ match }: { match: any }) {

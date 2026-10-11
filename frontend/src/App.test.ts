@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { formatDistance } from './App';
 
 describe('StayMate frontend test suite', () => {
   it('validates navigation route structure', () => {
@@ -45,5 +46,15 @@ describe('StayMate frontend test suite', () => {
     expect(badgeFor(candidates[1])).toBe('61% match');
     // Eligible but unscored person gets an honest "no data" badge, not a rejection.
     expect(badgeFor(candidates[2])).toBe('Not enough data');
+  });
+
+  // Location is scored by real distance now, and the match cards/details show
+  // that distance — e.g. "4.2 km away". Nearby commutes keep one decimal of
+  // precision; longer trips round to whole kilometres.
+  it('formats match distances for the cards and details', () => {
+    expect(formatDistance(0)).toBe('0 km');
+    expect(formatDistance(1.57)).toBe('1.6 km');
+    expect(formatDistance(9.94)).toBe('9.9 km');
+    expect(formatDistance(123.4)).toBe('123 km');
   });
 });

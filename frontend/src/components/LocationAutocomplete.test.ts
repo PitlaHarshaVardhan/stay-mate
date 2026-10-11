@@ -85,4 +85,32 @@ describe('deriveCityArea (MapTiler)', () => {
   it('returns null only when there is genuinely nothing to derive from', () => {
     expect(deriveCityArea(feature({ text: 'Nowhere', context: [] }))).toBeNull();
   });
+
+  it('passes the GeoJSON pin through as latitude/longitude for distance scoring', () => {
+    const pinned = feature({
+      place_name: 'Madhapur, Hyderabad, Telangana, India',
+      text: 'Madhapur',
+      place_type: ['place'],
+      // MapTiler GeoJSON order is [longitude, latitude].
+      geometry: { coordinates: [78.3779, 17.4439] },
+      context: [{ id: 'municipality.150196', text: 'Hyderabad' }],
+    });
+    expect(deriveCityArea(pinned)).toEqual({
+      city: 'Hyderabad',
+      area: 'Madhapur',
+      latitude: 17.4439,
+      longitude: 78.3779,
+    });
+  });
+
+  it('does not forward malformed coordinates as a pin', () => {
+    const broken = feature({
+      place_name: 'Madhapur, Hyderabad, Telangana, India',
+      text: 'Madhapur',
+      place_type: ['place'],
+      geometry: { coordinates: ['not', 'numbers'] as unknown as number[] },
+      context: [{ id: 'municipality.150196', text: 'Hyderabad' }],
+    });
+    expect(deriveCityArea(broken)).toEqual({ city: 'Hyderabad', area: 'Madhapur', latitude: undefined, longitude: undefined });
+  });
 });

@@ -291,6 +291,10 @@ model Preference {
   sleepSchedule          SleepSchedule
   cleanlinessPreference  CleanlinessPreference
   genderPreference       GenderPreference
+  // Optional map pin of the picked place (from the location autocomplete).
+  // When both people have pins, matching scores real straight-line distance.
+  latitude               Float?
+  longitude              Float?
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
 

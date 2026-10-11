@@ -41,11 +41,44 @@ describe('roommate compatibility scoring', () => {
     expect(result.breakdown.find((component) => component.key === 'moveInDate')?.score).toBe(90);
   });
 
-  it('rejects different destination cities before ranking', () => {
-    const result = calculateCompatibility(compatibleA, { ...compatibleB, city: 'Pune' });
+  it('scores different cities by distance instead of rejecting them', () => {
+    const result = calculateCompatibility(compatibleA, { ...compatibleB, city: 'Pune', area: 'Kothrud' });
 
-    expect(result.eligible).toBe(false);
-    expect(result.incompatibilityReasons).toContain('Destination cities differ.');
+    // Location is no longer a hard gate — nobody is badged "Not a match" for
+    // living in another city; they get a low provisional location score.
+    expect(result.eligible).toBe(true);
+    expect(result.incompatibilityReasons).toEqual([]);
+    expect(result.locationDistanceKm).toBeNull();
+    expect(result.breakdown.find((component) => component.key === 'location')).toMatchObject({ score: 20 });
+    expect(result.breakdown.find((component) => component.key === 'location')?.explanation).toContain('Different cities');
+  });
+
+  it('scores two pinned places by real distance and reports the distance', () => {
+    // ~1.6 km apart on the latitude axis, both inside Hyderabad.
+    const result = calculateCompatibility(
+      { ...compatibleA, latitude: 17.4467, longitude: 78.3489 },
+      { ...compatibleB, latitude: 17.4326, longitude: 78.3489 },
+    );
+
+    expect(result.eligible).toBe(true);
+    expect(result.locationDistanceKm).toBeGreaterThan(1);
+    expect(result.locationDistanceKm).toBeLessThan(2.5);
+    const location = result.breakdown.find((component) => component.key === 'location');
+    expect(location?.score).toBe(100);
+    expect(location?.explanation).toMatch(/km apart — walking distance\./);
+  });
+
+  it('scores far-apart pins low but keeps both people eligible', () => {
+    // Hyderabad -> Pune is several hundred km.
+    const result = calculateCompatibility(
+      { ...compatibleA, latitude: 17.4467, longitude: 78.3489 },
+      { ...compatibleB, city: 'Pune', area: 'Kothrud', latitude: 18.5074, longitude: 73.8077 },
+    );
+
+    expect(result.eligible).toBe(true);
+    expect(result.locationDistanceKm!).toBeGreaterThan(100);
+    expect(result.breakdown.find((component) => component.key === 'location')?.score).toBe(10);
+    expect(result.breakdown.find((component) => component.key === 'location')?.explanation).toContain('far apart');
   });
 
   it('rejects budgets with no shared feasible range', () => {
@@ -139,22 +172,29 @@ describe('buildRankedMatches', () => {
     };
   }
 
-  it('keeps every candidate, including incompatible ones with a 0 match', () => {
+  it('keeps every candidate, including far-away and budget-gated ones', () => {
     const results = buildRankedMatches(current, [
       candidate('u1', 'Strong Match', {}, 'FEMALE'),
-      candidate('u2', 'Different City', { city: 'Pune' }, 'FEMALE'),
+      candidate('u2', 'Different City', { city: 'Pune', area: 'Kothrud' }, 'FEMALE'),
       candidate('u3', 'No Budget Overlap', { budgetMin: 13000, budgetMax: 18000 }, 'FEMALE'),
     ]);
 
     // Nobody is dropped.
     expect(results).toHaveLength(3);
     expect(results.map((r) => r.user.name).sort()).toEqual(['Different City', 'No Budget Overlap', 'Strong Match']);
+    // A far-away person is no longer a hard "Not a match": they stay eligible
+    // with a low distance-based location score, ranked below the local match.
     const differentCity = results.find((r) => r.user.name === 'Different City');
-    expect(differentCity?.eligible).toBe(false);
-    expect(differentCity?.incompatibilityReasons).toContain('Destination cities differ.');
+    expect(differentCity?.eligible).toBe(true);
+    expect(differentCity?.incompatibilityReasons).toEqual([]);
+    expect(differentCity?.breakdown.find((c) => c.key === 'location')?.score).toBe(20);
+    // The budget gate still hard-blocks.
+    const noBudget = results.find((r) => r.user.name === 'No Budget Overlap');
+    expect(noBudget?.eligible).toBe(false);
+    expect(noBudget?.incompatibilityReasons).toContain('Budget ranges do not overlap.');
   });
 
-  it('ranks eligible matches ahead of unscored or incompatible people', () => {
+  it('ranks eligible matches ahead of unscored or gated people', () => {
     const emptyCandidate = candidate('u3', 'No Data', {
       city: undefined,
       area: undefined,
@@ -172,8 +212,9 @@ describe('buildRankedMatches', () => {
     } as any, undefined);
 
     const results = buildRankedMatches(current, [
-      candidate('u2', 'Different City', { city: 'Pune' }, 'FEMALE'),
+      candidate('u2', 'Different City', { city: 'Pune', area: 'Kothrud' }, 'FEMALE'),
       emptyCandidate,
+      candidate('u4', 'No Budget Overlap', { budgetMin: 13000, budgetMax: 18000 }, 'FEMALE'),
       candidate('u1', 'Strong Match', {}, 'FEMALE'),
     ]);
 
@@ -181,14 +222,14 @@ describe('buildRankedMatches', () => {
     expect(results[0].user.name).toBe('Strong Match');
     expect(results[0].eligible).toBe(true);
     expect(results[0].compatibilityScore).not.toBeNull();
-    // The fully-empty person is eligible but unscored (null score) and sinks.
+    // The fully-empty person is eligible but unscored (null score).
     const noData = results.find((r) => r.user.name === 'No Data');
     expect(noData?.compatibilityScore).toBeNull();
-    // The incompatible person is still returned, after the eligible group.
-    const differentCity = results.find((r) => r.user.name === 'Different City');
-    expect(differentCity?.eligible).toBe(false);
-    // Nobody dropped; ordering: Strong Match, No Data, Different City.
-    expect(results.map((r) => r.user.name)).toEqual(['Strong Match', 'No Data', 'Different City']);
+    // Nobody dropped; ordering: eligible by score (Strong Match, Different
+    // City, No Data with null score), then the budget-gated person.
+    expect(results.map((r) => r.user.name)).toEqual(['Strong Match', 'Different City', 'No Data', 'No Budget Overlap']);
+    expect(results.find((r) => r.user.name === 'Different City')?.eligible).toBe(true);
+    expect(results.find((r) => r.user.name === 'No Budget Overlap')?.eligible).toBe(false);
   });
 
   it('sorts eligible candidates by descending compatibility score', () => {

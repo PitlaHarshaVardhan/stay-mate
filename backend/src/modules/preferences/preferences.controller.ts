@@ -16,6 +16,9 @@ const preferenceSchema = z.object({
   sleepSchedule: z.enum(['EARLY', 'LATE', 'FLEXIBLE']),
   cleanlinessPreference: z.enum(['LOW', 'MEDIUM', 'HIGH']),
   genderPreference: z.enum(['MALE', 'FEMALE', 'ANY']),
+  // Optional map pin of the picked place; used to score match distance.
+  latitude: z.number().min(-90).max(90).nullish(),
+  longitude: z.number().min(-180).max(180).nullish(),
 });
 
 export async function upsertPreference(req: Request, res: Response, next: NextFunction) {

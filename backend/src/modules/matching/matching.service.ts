@@ -1,4 +1,8 @@
-export const MATCHING_ALGORITHM_VERSION = '1.0.0';
+// 1.1.0: location is no longer a hard gate — pinned locations are scored by
+// real straight-line (haversine) distance, and unpinned pairs fall back to
+// city/area string comparison with a low provisional score.
+// 1.0.0: initial weighted algorithm with city/budget/gender hard gates.
+export const MATCHING_ALGORITHM_VERSION = '1.1.0';
 
 export const DEFAULT_COMPATIBILITY_WEIGHTS = {
   budget: 25,
@@ -18,6 +22,8 @@ type PreferenceValue = string | number | Date | null | undefined;
 export type MatchingProfile = {
   city?: PreferenceValue;
   area?: PreferenceValue;
+  latitude?: PreferenceValue;
+  longitude?: PreferenceValue;
   budgetMin?: PreferenceValue;
   budgetMax?: PreferenceValue;
   moveInDate?: PreferenceValue;
@@ -43,6 +49,9 @@ export type CompatibilityResult = {
   eligible: boolean;
   incompatibilityReasons: string[];
   compatibilityScore: number | null;
+  // Straight-line distance (km, 1 decimal) between the two pinned locations.
+  // null when either side has no map pin saved.
+  locationDistanceKm: number | null;
   algorithmVersion: string;
   comparedCount: number;
   totalCriteria: number;
@@ -124,6 +133,55 @@ function cleanlinessScore(a: string, b: string): number {
   return difference === 0 ? 100 : difference === 1 ? 70 : 40;
 }
 
+const EARTH_RADIUS_KM = 6371;
+
+// Great-circle (haversine) distance between the two pinned places, in km.
+// Returns undefined when either side has no usable pin — e.g. people who saved
+// preferences before location pinning existed.
+export function distanceKm(a: MatchingProfile, b: MatchingProfile): number | undefined {
+  const latA = finiteNumber(a.latitude);
+  const lngA = finiteNumber(a.longitude);
+  const latB = finiteNumber(b.latitude);
+  const lngB = finiteNumber(b.longitude);
+  if (latA === undefined || lngA === undefined || latB === undefined || lngB === undefined) return undefined;
+  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+  const deltaLat = toRadians(latB - latA);
+  const deltaLng = toRadians(lngB - lngA);
+  const h =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(toRadians(latA)) * Math.cos(toRadians(latB)) * Math.sin(deltaLng / 2) ** 2;
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+// Location score for a known distance. Closer people share a commute, so the
+// percentage falls monotonically as the pins get farther apart. This replaces
+// the old behavior where different cities were a hard "Not a match" gate.
+export function locationDistanceScore(km: number): number {
+  if (km <= 2) return 100;
+  if (km <= 5) return 90;
+  if (km <= 10) return 80;
+  if (km <= 25) return 60;
+  if (km <= 50) return 40;
+  if (km <= 100) return 25;
+  return 10;
+}
+
+export function proximityLabel(km: number): string {
+  if (km <= 2) return 'walking distance';
+  if (km <= 5) return 'nearby';
+  if (km <= 15) return 'a short ride away';
+  if (km <= 40) return 'across the same wider area';
+  if (km <= 100) return 'within commutable range';
+  return 'far apart';
+}
+
+// Human-readable distance, keeping sub-10 km values precise (commute-relevant)
+// and rounding longer trips to whole kilometres.
+export function formatDistanceKm(km: number): string {
+  const rounded = km < 10 ? Math.round(km * 10) / 10 : Math.round(km);
+  return `${rounded} km`;
+}
+
 function genderEligibilityIssue(preference: string | undefined, otherGender: string | undefined): string | undefined {
   if (!preference || preference === 'any') return undefined;
   // Missing data is not proof of incompatibility. When the other person has not
@@ -167,7 +225,9 @@ export function calculateCompatibility(a: MatchingProfile, b: MatchingProfile): 
   const bMin = finiteNumber(b.budgetMin);
   const bMax = finiteNumber(b.budgetMax);
 
-  if (cityA && cityB && cityA !== cityB) incompatibilityReasons.push('Destination cities differ.');
+  // Location is deliberately NOT a hard gate: a candidate in another city is
+  // scored by distance instead of rejected, so the UI can show how far apart
+  // the two people are with a percentage that reflects it.
   if (aMin !== undefined && aMax !== undefined && bMin !== undefined && bMax !== undefined && Math.min(aMax, bMax) < Math.max(aMin, bMin)) {
     incompatibilityReasons.push('Budget ranges do not overlap.');
   }
@@ -191,6 +251,46 @@ export function calculateCompatibility(a: MatchingProfile, b: MatchingProfile): 
 
   const areaA = normalized(a.area);
   const areaB = normalized(b.area);
+
+  // Location component: when both people have map pins, score the real
+  // straight-line distance and surface it (e.g. "4.2 km apart — nearby") so
+  // the UI never has to fall back to a bare "Not a match" for location.
+  // Without pins, fall back to the city/area strings with a provisional score.
+  const placeDistanceKm = distanceKm(a, b);
+  let provisionalLocality = false;
+  let locationComponent: CompatibilityComponent;
+  if (placeDistanceKm !== undefined) {
+    locationComponent = {
+      key: 'location',
+      label: 'Location',
+      score: locationDistanceScore(placeDistanceKm),
+      weight: weights.location,
+      explanation: `${formatDistanceKm(placeDistanceKm)} apart — ${proximityLabel(placeDistanceKm)}.`,
+    };
+  } else if (cityA && areaA && cityB && areaB) {
+    const sameLocality = areaA === areaB;
+    provisionalLocality = cityA === cityB && !sameLocality;
+    locationComponent = {
+      key: 'location',
+      label: 'Location',
+      score: cityA !== cityB ? 20 : sameLocality ? 100 : 60,
+      weight: weights.location,
+      explanation: cityA !== cityB
+        ? 'Different cities; the exact distance appears once both people pick their place on the map.'
+        : sameLocality
+          ? 'Same city and locality.'
+          : 'Same city, different localities; the exact distance appears once both people pick their place on the map.',
+    };
+  } else {
+    locationComponent = {
+      key: 'location',
+      label: 'Location',
+      score: null,
+      weight: weights.location,
+      explanation: 'Not compared because one or both preferences are missing.',
+    };
+  }
+
   const components: CompatibilityComponent[] = [
     calculateComponent({
       key: 'budget', label: 'Budget', a: aMin !== undefined && aMax !== undefined ? `${aMin},${aMax}` : undefined,
@@ -198,14 +298,7 @@ export function calculateCompatibility(a: MatchingProfile, b: MatchingProfile): 
       score: budgetScore,
       explain: (left, right) => `Shared budget overlap is ₹${Math.max(Number(left.split(',')[0]), Number(right.split(',')[0]))}–₹${Math.min(Number(left.split(',')[1]), Number(right.split(',')[1]))}.`,
     }, weights.budget),
-    calculateComponent({
-      key: 'location', label: 'Location', a: cityA && areaA ? `${cityA}|${areaA}` : undefined,
-      b: cityB && areaB ? `${cityB}|${areaB}` : undefined,
-      score: (left, right) => left.split('|')[1] === right.split('|')[1] ? 100 : 60,
-      explain: (left, right) => left.split('|')[1] === right.split('|')[1]
-        ? 'Same city and locality.'
-        : 'Same city, different localities; distance is not geocoded yet.',
-    }, weights.location),
+    locationComponent,
     calculateComponent({
       key: 'moveInDate', label: 'Move-in date', a: dateTimestamp(a.moveInDate), b: dateTimestamp(b.moveInDate),
       score: dateScore,
@@ -248,7 +341,7 @@ export function calculateCompatibility(a: MatchingProfile, b: MatchingProfile): 
   const weightedTotal = comparedComponents.reduce((total, component) => total + (component.score ?? 0) * component.weight, 0);
   const compatibilityScore = availableWeight > 0 ? Math.round(weightedTotal / availableWeight) : null;
 
-  if (components.find((component) => component.key === 'location')?.score === 60) {
+  if (provisionalLocality) {
     notes.push('Locality compatibility is provisional because area-to-area distance is not geocoded.');
   }
 
@@ -256,6 +349,7 @@ export function calculateCompatibility(a: MatchingProfile, b: MatchingProfile): 
     eligible: incompatibilityReasons.length === 0,
     incompatibilityReasons,
     compatibilityScore,
+    locationDistanceKm: placeDistanceKm === undefined ? null : Math.round(placeDistanceKm * 10) / 10,
     algorithmVersion: MATCHING_ALGORITHM_VERSION,
     comparedCount: comparedComponents.length,
     totalCriteria: components.length,

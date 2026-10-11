@@ -6,11 +6,16 @@ export type MapTilerFeature = {
   text: string;
   place_type: string[];
   context?: { id: string; text: string }[];
+  // GeoJSON point of the picked place, as [longitude, latitude]. Used to pin
+  // the location so matches can show real distance between two people.
+  geometry?: { coordinates?: number[] };
 };
 
 export type LocationSelection = {
   city: string;
   area: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 // MapTiler place_types that ARE the city itself (so the picked place is the city).
@@ -46,7 +51,13 @@ export function deriveCityArea(feature: MapTilerFeature): LocationSelection | nu
     findContextText(feature, ...RURAL_CONTEXT_PREFIXES);
   if (!city) return null;
   const area = feature.text && feature.text !== city ? feature.text : city;
-  return { city, area };
+  // MapTiler GeoJSON coordinates are [longitude, latitude]. Pass the pin
+  // through so the backend can compute real distance between two matches.
+  const [longitude, latitude] = feature.geometry?.coordinates ?? [];
+  const hasPin =
+    typeof latitude === 'number' && Number.isFinite(latitude) &&
+    typeof longitude === 'number' && Number.isFinite(longitude);
+  return { city, area, latitude: hasPin ? latitude : undefined, longitude: hasPin ? longitude : undefined };
 }
 
 export default function LocationAutocomplete({ onSelect }: { onSelect: (location: LocationSelection) => void }) {

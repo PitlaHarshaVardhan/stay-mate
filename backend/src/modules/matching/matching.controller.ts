@@ -21,6 +21,8 @@ function sanitizePreference(preference: any) {
     sleepSchedule: preference.sleepSchedule,
     cleanlinessPreference: preference.cleanlinessPreference,
     genderPreference: preference.genderPreference,
+    latitude: preference.latitude,
+    longitude: preference.longitude,
   };
 }
 
