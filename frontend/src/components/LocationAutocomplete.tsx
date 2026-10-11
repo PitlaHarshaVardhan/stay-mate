@@ -1,32 +1,49 @@
 import { useEffect, useRef, useState } from 'react';
 import { MapPin, Search } from 'lucide-react';
 
-type MapTilerFeature = {
+export type MapTilerFeature = {
   place_name: string;
   text: string;
   place_type: string[];
   context?: { id: string; text: string }[];
 };
 
-type LocationSelection = {
+export type LocationSelection = {
   city: string;
   area: string;
 };
 
-const CITY_PLACE_TYPES = new Set(['city', 'town', 'village', 'municipality', 'locality']);
+// MapTiler place_types that ARE the city itself (so the picked place is the city).
+const CITY_PLACE_TYPES = new Set(['city', 'town', 'village', 'municipality', 'locality', 'county']);
+
+// MapTiler context ids that represent a containing city. Note `place.` is a
+// neighborhood/locality record (e.g. "Officers Colony"), NOT a city, so it is
+// deliberately excluded here.
+const CITY_CONTEXT_PREFIXES = ['municipality', 'joint_municipality', 'city', 'town', 'village', 'locality'];
+
+// Rural picks (e.g. small villages) have no city parent. MapTiler reports a
+// county (mandal/taluk) and subregion (district) instead — the same fallback
+// chain the old Google implementation used (administrative_area_level_3/2).
+const RURAL_CONTEXT_PREFIXES = ['county', 'subregion'];
 
 function findContextText(feature: MapTilerFeature, ...typePrefixes: string[]) {
   return feature.context?.find((item) => typePrefixes.some((prefix) => item.id.startsWith(`${prefix}.`)))?.text;
 }
 
 // MapTiler geocoding returns the matched place plus its containing admin areas
-// in `context`. Derive the same City + Area pair the form needs: the context
-// city when the pick is a neighborhood, or the picked place itself when it is
-// a city. Area falls back to city, matching the previous Google behavior.
-function deriveCityArea(feature: MapTilerFeature): LocationSelection | null {
-  const contextCity = findContextText(feature, 'city', 'town', 'village', 'municipality', 'locality');
+// in `context`. Derive the same City + Area pair the form needs:
+// 1. If the pick itself is a city-level place (city, municipality, mandal…),
+//    it IS the city.
+// 2. Otherwise use the containing city from context (e.g. Madhapur -> Hyderabad).
+// 3. For rural picks with no city parent, fall back to county (mandal) then
+//    subregion (district), mirroring the previous Google behavior.
+// Area is the picked place, falling back to the city when they are the same.
+export function deriveCityArea(feature: MapTilerFeature): LocationSelection | null {
   const isCityFeature = feature.place_type.some((type) => CITY_PLACE_TYPES.has(type));
-  const city = contextCity ?? (isCityFeature ? feature.text : undefined);
+  const city =
+    (isCityFeature ? feature.text : undefined) ??
+    findContextText(feature, ...CITY_CONTEXT_PREFIXES) ??
+    findContextText(feature, ...RURAL_CONTEXT_PREFIXES);
   if (!city) return null;
   const area = feature.text && feature.text !== city ? feature.text : city;
   return { city, area };
