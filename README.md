@@ -59,7 +59,7 @@ Roommate recommendations use compatibility algorithm `1.0.0`. City, overlapping 
 
 The default weights are budget 25, location 20, move-in date 15, room sharing 10, smoking 8, cleanliness 7, drinking 5, food 5, and sleep schedule 5. To override them on the backend, set `MATCHING_WEIGHTS_JSON` to an object with those keys and non-negative numeric weights.
 
-For place suggestions, create an API key at [cloud.maptiler.com](https://cloud.maptiler.com/account/keys/) and set `VITE_MAPTILER_API_KEY` in the frontend environment (locally in `frontend/.env.local`, in production in Vercel's environment settings). Restrict the key by HTTP referrer to your domains. Selecting a result fills City and Area; both fields remain editable if suggestions are unavailable.
+For place suggestions, create an API key at [cloud.maptiler.com](https://cloud.maptiler.com/account/keys/) and set `VITE_MAPTILER_API_KEY` in the frontend environment (locally in `frontend/.env.local`, in production in Vercel's environment settings). Restrict the key by HTTP referrer to your domains. Selecting a result fills City and Area; both fields are read-only and can only be set by picking a search suggestion.
 
 ## Product focus
 

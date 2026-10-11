@@ -1144,11 +1144,11 @@ function PreferencesPage({
     event.preventDefault();
 
     if (!form.city.trim() || form.city.trim().length < 2) {
-      showToast('Please enter a valid destination city (min. 2 characters).', 'error');
+      showToast('Please search for a place and select a destination city from the suggestions.', 'error');
       return;
     }
     if (!form.area.trim() || form.area.trim().length < 2) {
-      showToast('Please enter a valid area or locality (min. 2 characters).', 'error');
+      showToast('Please search for a place and select a locality or area from the suggestions.', 'error');
       return;
     }
     if (Number(form.budgetMax) < Number(form.budgetMin)) {
@@ -1201,11 +1201,10 @@ function PreferencesPage({
             </label>
             <input
               required
-              minLength={2}
+              readOnly
               value={form.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
-              placeholder="e.g. Bangalore, Hyderabad, Pune"
+              placeholder="Filled from the place you select above"
+              className="w-full cursor-default rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none"
             />
           </div>
           <div>
@@ -1214,14 +1213,15 @@ function PreferencesPage({
             </label>
             <input
               required
-              minLength={2}
+              readOnly
               value={form.area}
-              onChange={(e) => setForm({ ...form, area: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
-              placeholder="e.g. Koramangala, Madhapur, HSR"
+              placeholder="Filled from the place you select above"
+              className="w-full cursor-default rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none"
             />
           </div>
-          <p className="text-xs text-slate-500 sm:col-span-2">Selecting a place fills both fields; you can still edit City and Area manually.</p>
+          <p className="text-xs text-slate-500 sm:col-span-2">
+            Search a place above and pick a result from the list — City and Area are filled automatically and can't be edited by hand.
+          </p>
         </div>
 
         {/* Budget */}
@@ -1447,7 +1447,6 @@ function MatchingPage({
         const response = await api.getMatchingPeople();
         const data = response.data ?? [];
         setMatches(data);
-        setSelectedMatchId(data[0]?.user?.id ?? null);
       } catch (error) {
         setMatches([]);
         setSelectedMatchId(null);
@@ -1458,7 +1457,26 @@ function MatchingPage({
     })();
   }, [userId]);
 
-  const selectedMatch = matches.find((match) => match.user.id === selectedMatchId) ?? matches[0] ?? null;
+  // Popup behavior: Escape closes the detail popup and the page behind it
+  // stays fixed while it is open.
+  useEffect(() => {
+    if (!selectedMatchId) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedMatchId(null);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [selectedMatchId]);
+
+  // The detail view is a popup: it only opens when a candidate is clicked.
+  const selectedMatch = selectedMatchId
+    ? matches.find((match) => match.user.id === selectedMatchId) ?? null
+    : null;
   const totalMatchPages = Math.ceil(matches.length / PAGE_SIZE);
   const currentMatchPage = Math.min(matchPage, Math.max(1, totalMatchPages));
   const visibleMatches = matches.slice((currentMatchPage - 1) * PAGE_SIZE, currentMatchPage * PAGE_SIZE);
@@ -1530,7 +1548,7 @@ function MatchingPage({
           {loadError}
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1.3fr,0.7fr]">
+        <div>
           {/* Matches List */}
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -1624,16 +1642,36 @@ function MatchingPage({
               totalItems={matches.length}
               onPageChange={(page) => {
                 setMatchPage(page);
-                setSelectedMatchId(matches[(page - 1) * PAGE_SIZE]?.user?.id ?? null);
               }}
               label="Match recommendations"
             />
           </div>
 
-          {/* Selected Match Detail Card */}
-          {selectedMatch && (
-            <div className="sticky top-20 flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-indigo-50/30 to-violet-50/40 p-6 shadow-sm">
-              <div>
+        </div>
+      )}
+
+      {/* Selected Match Detail Popup */}
+      {selectedMatch && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Profile details for ${selectedMatch.user.name}`}
+          onClick={() => setSelectedMatchId(null)}
+        >
+          <div
+            className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-y-auto rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-indigo-50/30 to-violet-50/40 p-6 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedMatchId(null)}
+              aria-label="Close profile details"
+              className="absolute right-4 top-4 z-10 rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            >
+              <X size={18} />
+            </button>
+            <div>
                 <div className="flex items-center gap-4">
                   <AvatarPreview
                     name={selectedMatch.user.name}
@@ -1770,8 +1808,8 @@ function MatchingPage({
                 )}
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       )}
     </div>
   );
@@ -1932,11 +1970,11 @@ function GroupsPage({
       return;
     }
     if (!form.city.trim() || form.city.trim().length < 2) {
-      showToast('City must be at least 2 characters.', 'error');
+      showToast('Search for a place and select a destination city from the suggestions.', 'error');
       return;
     }
     if (!form.area.trim() || form.area.trim().length < 2) {
-      showToast('Area must be at least 2 characters.', 'error');
+      showToast('Search for a place and select a locality or area from the suggestions.', 'error');
       return;
     }
 
@@ -2005,6 +2043,9 @@ function GroupsPage({
         </p>
 
         <form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={onCreate}>
+          <LocationAutocomplete
+            onSelect={({ city, area }) => setForm((current) => ({ ...current, city, area }))}
+          />
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
               Group Name *
@@ -2024,11 +2065,10 @@ function GroupsPage({
             </label>
             <input
               required
-              minLength={2}
+              readOnly
               value={form.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
-              placeholder="e.g. Hyderabad"
+              placeholder="Filled from the place you select above"
+              className="w-full cursor-default rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none"
             />
           </div>
           <div>
@@ -2037,11 +2077,10 @@ function GroupsPage({
             </label>
             <input
               required
-              minLength={2}
+              readOnly
               value={form.area}
-              onChange={(e) => setForm({ ...form, area: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
-              placeholder="e.g. Hitec City"
+              placeholder="Filled from the place you select above"
+              className="w-full cursor-default rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none"
             />
           </div>
           <div>

@@ -42,7 +42,7 @@ export default function LocationAutocomplete({ onSelect }: { onSelect: (location
 
   useEffect(() => {
     if (!apiKey) {
-      setStatus('Add a MapTiler API key to enable suggestions; City and Area can still be entered manually.');
+      setStatus('Add a MapTiler API key to enable place suggestions. City and Area are filled only from search results.');
     }
   }, [apiKey]);
 
@@ -94,7 +94,7 @@ export default function LocationAutocomplete({ onSelect }: { onSelect: (location
   const selectFeature = (feature: MapTilerFeature) => {
     const derived = deriveCityArea(feature);
     if (!derived) {
-      setStatus('Could not map that place to a City and Area. Please fill them in manually.');
+      setStatus('Could not map that place to a City and Area. Please pick another suggestion.');
       return;
     }
     onSelect(derived);
