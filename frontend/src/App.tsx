@@ -1810,7 +1810,6 @@ function MatchingPage({
             </div>
           </div>
         )}
-      )}
     </div>
   );
 }
