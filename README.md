@@ -53,6 +53,14 @@ The backend loads `backend/.env.local` outside production, overriding any base `
 - Use HTTPS and keep the frontend and API on subdomains of the same domain so authentication cookies work reliably.
 - Do not copy either local `.env.local` file to production; Render and Vercel environment settings are used there.
 
+## Matching and location search
+
+Roommate recommendations use compatibility algorithm `1.0.0`. City, overlapping budget, and a verified gender-requirement mismatch are hard gates — a stated roommate gender requirement only blocks when both people have supplied a gender and the two conflict; when a profile gender is missing the requirement is surfaced as a note rather than a blocker, because absence of data is not incompatibility. Eligible candidates receive a weighted score with a per-criterion breakdown and completeness count. Every other person with a preference profile is still listed so nobody is hidden — people who fail a hard gate or have too little data to score are ranked below real matches and clearly badged "Not a match", with the specific incompatibility reasons shown. Different areas in the same city currently receive a provisional location score because area-to-area distance is not geocoded. The score describes recorded preference alignment, not predicted roommate success. Group feasibility and property suitability are separate future scores.
+
+The default weights are budget 25, location 20, move-in date 15, room sharing 10, smoking 8, cleanliness 7, drinking 5, food 5, and sleep schedule 5. To override them on the backend, set `MATCHING_WEIGHTS_JSON` to an object with those keys and non-negative numeric weights.
+
+For Google Places suggestions, enable the Google Maps JavaScript API and Places API (New), configure billing, and set `VITE_GOOGLE_MAPS_API_KEY` in the frontend environment. Restrict that browser key by HTTP referrer and API. Selecting a result fills City and Area; both fields remain editable if suggestions are unavailable.
+
 ## Product focus
 
 Phase 1 focuses on:

@@ -58,7 +58,7 @@ export const api = {
     method: 'PUT',
     body: JSON.stringify(payload),
   }),
-  getMatchingPeople: (userId: string) => request<any[]>(`/api/matching/people?userId=${encodeURIComponent(userId)}`),
+  getMatchingPeople: () => request<any[]>('/api/matching/people'),
   createConnection: (receiverId: string) => request<any>('/api/connections', {
     method: 'POST',
     body: JSON.stringify({ receiverId }),

@@ -26,6 +26,7 @@ import { Link, NavLink, Route, Routes, useNavigate, Navigate } from 'react-route
 import AuthForm from './components/AuthForm';
 import ChatPanel from './components/ChatPanel';
 import ConnectionBoard from './components/ConnectionBoard';
+import LocationAutocomplete from './components/LocationAutocomplete';
 import PasswordRecoveryPage from './components/PasswordRecoveryPage';
 import Pagination, { PAGE_SIZE } from './components/Pagination';
 import { api } from './lib/api';
@@ -1191,6 +1192,9 @@ function PreferencesPage({
       <form className="mt-6 space-y-5" onSubmit={onSubmit}>
         {/* City & Area */}
         <div className="grid gap-4 sm:grid-cols-2">
+          <LocationAutocomplete
+            onSelect={({ city, area }) => setForm((current) => ({ ...current, city, area }))}
+          />
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
               Destination City *
@@ -1217,6 +1221,7 @@ function PreferencesPage({
               placeholder="e.g. Koramangala, Madhapur, HSR"
             />
           </div>
+          <p className="text-xs text-slate-500 sm:col-span-2">Selecting a place fills both fields; you can still edit City and Area manually.</p>
         </div>
 
         {/* Budget */}
@@ -1439,7 +1444,7 @@ function MatchingPage({
         }
 
         setNeedsPreferences(false);
-        const response = await api.getMatchingPeople(userId);
+        const response = await api.getMatchingPeople();
         const data = response.data ?? [];
         setMatches(data);
         setSelectedMatchId(data[0]?.user?.id ?? null);
@@ -1531,7 +1536,7 @@ function MatchingPage({
             <div className="grid gap-4 sm:grid-cols-2">
               {matches.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500 sm:col-span-2">
-                  No matching roommates found yet for your chosen city and budget. Try expanding your search criteria in Preferences!
+                  No roommates are available to show yet. Once other people set their preferences, they'll appear here — those that don't share your city, budget, or gender requirements are listed as "Not a match".
                 </div>
               ) : (
                 visibleMatches.map((match) => {
@@ -1565,10 +1570,34 @@ function MatchingPage({
                             </div>
                           </div>
 
-                          <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200/60">
-                            {match.compatibilityScore}%
-                          </span>
+                          {match.eligible ? (
+                            match.compatibilityScore !== null ? (
+                              <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200/60">
+                                {match.compatibilityScore}% match
+                              </span>
+                            ) : (
+                              <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 border border-slate-200/60">
+                                Not enough data
+                              </span>
+                            )
+                          ) : match.compatibilityScore !== null ? (
+                            <span className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 border border-rose-200/60">
+                              Not a match · {match.compatibilityScore}%
+                            </span>
+                          ) : (
+                            <span className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 border border-rose-200/60">
+                              Not a match
+                            </span>
+                          )}
                         </div>
+                        <p className="mt-1 pl-[3.25rem] text-[11px] text-slate-500">
+                          {match.comparedCount}/{match.totalCriteria} preferences compared
+                          {matchingCriteria(match).length > 0 && (
+                            <span className="ml-1 font-semibold text-emerald-600">
+                              · {matchingCriteria(match).length} in common
+                            </span>
+                          )}
+                        </p>
 
                         <p className="mt-3 line-clamp-2 text-xs text-slate-600 leading-relaxed">
                           {match.profile?.bio ?? 'Looking for a friendly and compatible roommate.'}
@@ -1620,9 +1649,25 @@ function MatchingPage({
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 border border-emerald-200/60">
-                    {selectedMatch.compatibilityScore}% compatibility
-                  </span>
+                  {selectedMatch.eligible ? (
+                    selectedMatch.compatibilityScore !== null ? (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 border border-emerald-200/60">
+                        {selectedMatch.compatibilityScore}% compatibility
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 border border-slate-200/60">
+                        Not enough data to score yet
+                      </span>
+                    )
+                  ) : selectedMatch.compatibilityScore !== null ? (
+                    <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700 border border-rose-200/60">
+                      Not a match · {selectedMatch.compatibilityScore}% overlap
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700 border border-rose-200/60">
+                      Not a match
+                    </span>
+                  )}
                   <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700 border border-indigo-200/60">
                     {selectedMatch.preference.city}
                   </span>
@@ -1630,6 +1675,20 @@ function MatchingPage({
                     {selectedMatch.preference.roomType}
                   </span>
                 </div>
+
+                {!selectedMatch.eligible && selectedMatch.incompatibilityReasons?.length > 0 && (
+                  <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50/60 p-4 text-xs text-rose-700">
+                    <p className="font-bold text-rose-800">Why this isn't a match</p>
+                    <ul className="mt-1.5 space-y-1 leading-relaxed">
+                      {selectedMatch.incompatibilityReasons.map((reason: string) => (
+                        <li key={reason} className="flex gap-1.5">
+                          <span aria-hidden="true">•</span>
+                          <span>{reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 <div className="mt-4 rounded-2xl bg-white/90 p-4 text-xs text-slate-600 border border-slate-100 shadow-xs leading-relaxed">
                   {selectedMatch.profile?.bio ?? 'Looking for a compatible roommate match.'}
@@ -1667,6 +1726,8 @@ function MatchingPage({
                     </span>
                   </div>
                 </div>
+
+                <CompatibilityBreakdown match={selectedMatch} />
               </div>
 
               {/* Action Buttons */}
@@ -1713,6 +1774,101 @@ function MatchingPage({
         </div>
       )}
     </div>
+  );
+}
+
+/* Criteria that were compared AND scored well — the shared common ground
+   between the current user and a candidate. Used to highlight what's matching
+   for everyone, including people who are not an overall match. */
+const MATCHING_SCORE_THRESHOLD = 70;
+function matchingCriteria(match: any): any[] {
+  return ((match?.breakdown as any[]) ?? []).filter(
+    (component) => component.score !== null && component.score >= MATCHING_SCORE_THRESHOLD,
+  );
+}
+
+function CompatibilityBreakdown({ match }: { match: any }) {
+  const scoreLabel = (score: number | null) => {
+    if (score === null) return 'Not compared';
+    if (score >= 85) return 'Strong alignment';
+    if (score >= 70) return 'Good potential';
+    if (score >= 50) return 'Some differences';
+    return 'Low alignment';
+  };
+
+  const matchingComponents = matchingCriteria(match);
+
+  return (
+    <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h4 className="text-sm font-bold text-slate-900">
+          {match.eligible ? 'Why this match' : 'Preference comparison'}
+        </h4>
+        <span className="text-[11px] text-slate-500">{match.comparedCount}/{match.totalCriteria} compared · {match.coveragePercent}% coverage</span>
+      </div>
+      <p className="mt-1 text-[11px] text-slate-500">
+        Version {match.algorithmVersion} · Preference alignment, not a prediction of roommate success.
+      </p>
+
+      {/* Always surface the common ground — even for people who are not an
+          overall match (e.g. different city). A criterion counts as matching
+          when it was compared and scored well, consistent with the per-criterion
+          labels below (>= 70 = "Good potential"). */}
+      {matchingComponents.length > 0 ? (
+        <div className="mt-3 rounded-2xl border border-emerald-200/60 bg-emerald-50 p-4">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
+            <h5 className="text-sm font-bold text-emerald-800">
+              What's matching ({matchingComponents.length})
+            </h5>
+          </div>
+          <ul className="mt-2 space-y-1.5">
+            {matchingComponents.map((component: any) => (
+              <li key={component.key} className="flex items-start gap-2 text-xs text-emerald-800">
+                <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                <span className="leading-4">
+                  <span className="font-semibold">{component.label}:</span> {component.explanation}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500">
+          <AlertCircle size={16} className="mt-0.5 shrink-0 text-slate-400" />
+          <span className="leading-4">
+            No shared preferences scored highly yet. The full comparison is below — anything not listed as matching may still be close or worth a conversation.
+          </span>
+        </div>
+      )}
+
+      <div className="mt-3 space-y-3">
+        {match.breakdown.map((component: any) => (
+          <div key={component.key}>
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="font-semibold text-slate-800">
+                {component.label} <span className="font-normal text-slate-400">{component.weight}%</span>
+              </span>
+              <span className="shrink-0 text-slate-600">
+                {component.score === null ? 'Not compared' : `${component.score}% · ${scoreLabel(component.score)}`}
+              </span>
+            </div>
+            {component.score !== null && (
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-indigo-500" style={{ width: `${component.score}%` }} />
+              </div>
+            )}
+            <p className="mt-1 text-[11px] leading-4 text-slate-500">{component.explanation}</p>
+          </div>
+        ))}
+      </div>
+
+      {match.notes.length > 0 && (
+        <div className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+          {match.notes.map((note: string) => <p key={note} className="text-[11px] leading-4 text-amber-800">{note}</p>)}
+        </div>
+      )}
+    </section>
   );
 }
 
