@@ -6,7 +6,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
 
   if (!host || !from) {
     if (process.env.NODE_ENV !== 'production') {
-      console.info(`Password reset link for ${email}: ${resetUrl}`);
+      console.info(`[password-reset] link for ${email}: ${resetUrl}`);
       return;
     }
     throw new Error('SMTP_HOST and SMTP_FROM must be configured to send password reset email.');

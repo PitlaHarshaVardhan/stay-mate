@@ -49,6 +49,7 @@ The backend loads `backend/.env.local` outside production, overriding any base `
 - Set `CLIENT_URL` in the backend hosting environment to the exact deployed frontend origin, for example `https://app.yourdomain.com`.
 - Set the backend `DATABASE_URL` to the production Neon connection string and `NODE_ENV=production` in the backend hosting environment.
 - Configure `SMTP_HOST`, `SMTP_PORT`, and `SMTP_FROM` on the backend to deliver password reset emails. Set `SMTP_USER` and `SMTP_PASS` too when your SMTP provider requires authentication.
+- In local development without SMTP, the password-reset link is logged by the backend and shown on the confirmation page. Configure SMTP in production; delivery failures are surfaced as errors.
 - Configure Render's pre-deploy command as `npm run prisma:migrate:deploy --workspace backend` to apply committed migrations using Render's production `DATABASE_URL`.
 - Use HTTPS and keep the frontend and API on subdomains of the same domain so authentication cookies work reliably.
 - Do not copy either local `.env.local` file to production; Render and Vercel environment settings are used there.

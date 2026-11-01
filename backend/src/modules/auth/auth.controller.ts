@@ -111,6 +111,7 @@ export async function requestPasswordReset(req: Request, res: Response, next: Ne
   try {
     const { email } = forgotPasswordSchema.parse(req.body);
     const user = await prisma.user.findUnique({ where: { email } });
+    let resetUrl: string | undefined;
 
     if (user) {
       const token = randomBytes(32).toString('hex');
@@ -122,19 +123,31 @@ export async function requestPasswordReset(req: Request, res: Response, next: Ne
         prisma.passwordResetToken.create({ data: { userId: user.id, tokenHash, expiresAt } }),
       ]);
 
-      const resetUrl = new URL('/reset-password', process.env.CLIENT_URL ?? 'http://localhost:5173');
-      resetUrl.searchParams.set('token', token);
+      const resetLink = new URL('/reset-password', process.env.CLIENT_URL ?? 'http://localhost:5173');
+      resetLink.searchParams.set('token', token);
 
       try {
-        await sendPasswordResetEmail(user.email, resetUrl.toString());
+        await sendPasswordResetEmail(user.email, resetLink.toString());
       } catch (error) {
         console.error('Could not send password reset email:', error);
+        return res.status(503).json({
+          success: false,
+          error: {
+            code: 'PASSWORD_RESET_EMAIL_FAILED',
+            message: 'We could not send a password reset email. Please try again later.',
+          },
+        });
+      }
+
+      if (process.env.NODE_ENV !== 'production') {
+        resetUrl = resetLink.toString();
       }
     }
 
     return res.json({
       success: true,
-      message: 'If an account exists for that email, password reset instructions will be sent shortly.',
+      message: 'If an account exists for that email, a password reset link has been sent. Check your inbox (and spam) and follow the link.',
+      ...(resetUrl ? { data: { resetUrl } } : {}),
     });
   } catch (error) {
     return next(error);

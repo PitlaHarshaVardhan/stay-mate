@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDistance } from './App';
+import { distanceStatus, formatDistance } from './App';
 
 describe('StayMate frontend test suite', () => {
   it('validates navigation route structure', () => {
@@ -56,5 +56,16 @@ describe('StayMate frontend test suite', () => {
     expect(formatDistance(1.57)).toBe('1.6 km');
     expect(formatDistance(9.94)).toBe('9.9 km');
     expect(formatDistance(123.4)).toBe('123 km');
+  });
+
+  it('always shows a distance status when a match has no saved map pins', () => {
+    expect(distanceStatus({ locationDistanceKm: 4.2 })).toEqual({
+      content: '4.2 km away',
+      tone: 'distance',
+    });
+    expect(distanceStatus({ locationDistanceKm: null })).toEqual({
+      content: 'Exact distance unavailable',
+      tone: 'noPin',
+    });
   });
 });

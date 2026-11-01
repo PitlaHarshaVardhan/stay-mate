@@ -14,15 +14,21 @@ export default function PasswordRecoveryPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [resetUrl, setResetUrl] = useState('');
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError('');
     setMessage('');
+    setResetUrl('');
 
     try {
       if (isReset) {
+        if (!isResetToken) {
+          setError('This password reset link is invalid. Request a new one.');
+          return;
+        }
         if (password !== confirmPassword) {
           setError('Passwords do not match.');
           return;
@@ -30,8 +36,14 @@ export default function PasswordRecoveryPage() {
         const response = await api.resetPassword(token, password);
         setMessage(response.message ?? 'Password updated successfully! You can now sign in.');
       } else {
-        const response = await api.requestPasswordReset(email.trim());
-        setMessage(response.message ?? 'If an account exists for that email, password reset instructions will be sent shortly.');
+        const trimmed = email.trim();
+        if (!trimmed) {
+          setError('Please enter your email address.');
+          return;
+        }
+        const response = await api.requestPasswordReset(trimmed);
+        setMessage(response.message ?? 'If an account exists for that email, a password reset link has been sent.');
+        setResetUrl(response.data?.resetUrl ?? '');
       }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Could not complete this request.');
@@ -39,6 +51,11 @@ export default function PasswordRecoveryPage() {
       setLoading(false);
     }
   };
+
+  // Front-end guard: the reset link must be at least 32 chars and URL-safe hex,
+  // matching the backend `min(32)` on the reset token. This prevents the reset
+  // form from being submitted with a malformed/expired token.
+  const isResetToken = token.length >= 32 && /^[a-fA-F0-9]+$/.test(token);
 
   return (
     <div className="w-full max-w-md mx-auto py-2 sm:py-6">
@@ -67,6 +84,14 @@ export default function PasswordRecoveryPage() {
               <CheckCircle2 size={24} />
             </div>
             <p className="text-sm font-medium text-slate-700 leading-relaxed">{message}</p>
+            {resetUrl && (
+              <a
+                href={resetUrl}
+                className="inline-flex text-sm font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-700"
+              >
+                Open your development reset link
+              </a>
+            )}
             <Link
               to="/login"
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white shadow-xs transition hover:bg-indigo-700"
@@ -93,6 +118,12 @@ export default function PasswordRecoveryPage() {
                   &times;
                 </button>
               </div>
+            )}
+
+            {isReset && (
+              <p className="text-[11px] text-slate-400">
+                Choose a password with at least 8 characters.
+              </p>
             )}
 
             {isReset ? (

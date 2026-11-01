@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Menu,
   X,
@@ -61,11 +61,27 @@ export default function App() {
     }, 3800);
   };
 
+  const sessionRequired = (content: ReactNode) => {
+    if (loading) {
+      return (
+        <div className="flex min-h-[300px] items-center justify-center text-slate-500">
+          <Sparkles className="mr-2 h-5 w-5 animate-spin text-indigo-600" />
+          <span>Checking your session...</span>
+        </div>
+      );
+    }
+    return user ? content : <Navigate to="/login" replace />;
+  };
+
   const loadUser = async () => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10000);
+
     try {
-      const response = await api.getCurrentUser();
+      const response = await api.getCurrentUser(controller.signal);
       const currentUser = response.data?.user ?? null;
       setUser(currentUser);
+      setLoading(false);
       if (currentUser) {
         const [connectionsResponse, notificationsResponse] = await Promise.all([
           api.getConnections().catch(() => ({ data: [] })),
@@ -74,11 +90,25 @@ export default function App() {
         setConnections(connectionsResponse.data ?? []);
         setNotifications(notificationsResponse.data ?? []);
       }
-    } catch {
+    } catch (err) {
       setUser(null);
       setConnections([]);
       setNotifications([]);
+      const isExpectedUnauthenticated =
+        err instanceof Error &&
+        ['No authentication token', 'Invalid authentication token', 'User not found'].includes(err.message);
+      if (!isExpectedUnauthenticated) {
+        showToast(
+          controller.signal.aborted
+            ? 'Could not verify your session. Check your connection and try again.'
+            : err instanceof Error
+              ? err.message
+              : 'Could not verify your session.',
+          'error'
+        );
+      }
     } finally {
+      window.clearTimeout(timeout);
       setLoading(false);
     }
   };
@@ -158,18 +188,6 @@ export default function App() {
     showToast('Logged out successfully.', 'info');
     navigate('/');
   };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 text-slate-600">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-200 animate-bounce">
-          <Sparkles size={24} />
-        </div>
-        <div className="mt-4 text-base font-semibold text-slate-800">Loading StayMate...</div>
-        <p className="mt-1 text-xs text-slate-400">Finding your perfect flatmates</p>
-      </div>
-    );
-  }
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
 
@@ -448,7 +466,7 @@ export default function App() {
 
           <Route
             path="/connections"
-            element={
+            element={sessionRequired(
               user ? (
                 <ConnectionsPage
                   userId={user.id}
@@ -458,28 +476,22 @@ export default function App() {
                   onDelete={handleDelete}
                   onMessage={handleStartChat}
                 />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
+              ) : null
+            )}
           />
           <Route
             path="/profile"
-            element={
-              user ? (
-                <ProfilePage user={user} onUserUpdate={loadUser} showToast={showToast} />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
+            element={sessionRequired(
+              user ? <ProfilePage user={user} onUserUpdate={loadUser} showToast={showToast} /> : null
+            )}
           />
           <Route
             path="/preferences"
-            element={user ? <PreferencesPage showToast={showToast} /> : <Navigate to="/login" replace />}
+            element={sessionRequired(user ? <PreferencesPage showToast={showToast} /> : null)}
           />
           <Route
             path="/matches"
-            element={
+            element={sessionRequired(
               user ? (
                 <MatchingPage
                   userId={user.id}
@@ -488,20 +500,16 @@ export default function App() {
                   onStartChat={handleStartChat}
                   showToast={showToast}
                 />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
+              ) : null
+            )}
           />
           <Route
             path="/groups"
-            element={
-              user ? <GroupsPage userId={user.id} showToast={showToast} /> : <Navigate to="/login" replace />
-            }
+            element={sessionRequired(user ? <GroupsPage userId={user.id} showToast={showToast} /> : null)}
           />
           <Route
             path="/messages"
-            element={user ? <ChatPanel user={user} /> : <Navigate to="/login" replace />}
+            element={sessionRequired(user ? <ChatPanel user={user} /> : null)}
           />
         </Routes>
       </main>
@@ -1638,11 +1646,13 @@ function MatchingPage({
                         <span className="flex items-center gap-1 font-medium text-slate-700">
                           <MapPin size={12} className="text-indigo-600" />
                           {match.preference.city}
-                          {typeof match.locationDistanceKm === 'number' && (
-                            <span className="ml-1 rounded-full bg-sky-50 px-2 py-0.5 font-semibold text-sky-700 border border-sky-200/60">
-                              {formatDistance(match.locationDistanceKm)} away
-                            </span>
-                          )}
+                          <span className={`ml-1 rounded-full border px-2 py-0.5 font-semibold ${
+                            distanceStatus(match).tone === 'distance'
+                              ? 'border-sky-200/60 bg-sky-50 text-sky-700'
+                              : 'border-slate-200 bg-slate-50 text-slate-500'
+                          }`}>
+                            {distanceStatus(match).content}
+                          </span>
                         </span>
                         <span className="font-semibold text-slate-900">
                           ₹{match.preference.budgetMin} - ₹{match.preference.budgetMax}
@@ -1726,11 +1736,13 @@ function MatchingPage({
                   <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700 border border-indigo-200/60">
                     {selectedMatch.preference.city}
                   </span>
-                  {typeof selectedMatch.locationDistanceKm === 'number' && (
-                    <span className="rounded-full bg-sky-50 px-3 py-1 text-sky-700 border border-sky-200/60">
-                      {formatDistance(selectedMatch.locationDistanceKm)} away
-                    </span>
-                  )}
+                  <span className={`rounded-full border px-3 py-1 ${
+                    distanceStatus(selectedMatch).tone === 'distance'
+                      ? 'border-sky-200/60 bg-sky-50 text-sky-700'
+                      : 'border-slate-200 bg-slate-50 text-slate-500'
+                  }`}>
+                    {distanceStatus(selectedMatch).content}
+                  </span>
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
                     {selectedMatch.preference.roomType}
                   </span>
@@ -1755,14 +1767,14 @@ function MatchingPage({
                 </div>
 
                 <div className="mt-4 space-y-2.5 rounded-2xl bg-white/60 p-4 border border-slate-100 text-xs text-slate-600">
-                  {typeof selectedMatch.locationDistanceKm === 'number' && (
-                    <div className="flex justify-between">
-                      <span className="font-medium text-slate-500">Distance apart:</span>
-                      <span className="font-semibold text-slate-800">
-                        {formatDistance(selectedMatch.locationDistanceKm)} away
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex justify-between gap-3">
+                    <span className="font-medium text-slate-500">Distance apart:</span>
+                    <span className="text-right font-semibold text-slate-800">
+                      {distanceStatus(selectedMatch).content}
+                      {distanceStatus(selectedMatch).tone === 'noPin' &&
+                        ' — both people need to pick a place from map suggestions in Preferences.'}
+                    </span>
+                  </div>
                   <div className="flex justify-between">
                     <span className="font-medium text-slate-500">Move-in Date:</span>
                     <span className="font-semibold text-slate-800">
@@ -1859,6 +1871,21 @@ function matchingCriteria(match: any): any[] {
 export function formatDistance(km: number): string {
   const rounded = km < 10 ? Math.round(km * 10) / 10 : Math.round(km);
   return `${rounded} km`;
+}
+
+/**
+ * Builds the distance/status line for a match. `distanceKm` is the real
+ * straight-line distance when BOTH users have saved map pins, null when either
+ * side has no pin (matching can still use a provisional city/area comparison).
+ * The UI always renders a status so missing pins are not mistaken for a bug.
+ */
+export function distanceStatus(match: { locationDistanceKm?: number | null }) {
+  const distance = match.locationDistanceKm;
+  if (typeof distance === 'number' && Number.isFinite(distance)) {
+    return { content: `${formatDistance(distance)} away`, tone: 'distance' };
+  }
+
+  return { content: 'Exact distance unavailable', tone: 'noPin' };
 }
 
 function CompatibilityBreakdown({ match }: { match: any }) {

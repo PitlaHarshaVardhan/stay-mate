@@ -30,12 +30,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
 }
 
 export const api = {
-  getCurrentUser: () => request<{ user: any }>('/api/auth/me'),
+  getCurrentUser: (signal?: AbortSignal) => request<{ user: any }>('/api/auth/me', { signal }),
   login: (payload: { email?: string; phone?: string; password: string }) => request<{ id: string; name: string; email: string }>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
-  requestPasswordReset: (email: string) => request<{ message: string }>('/api/auth/forgot-password', {
+  requestPasswordReset: (email: string) => request<{ resetUrl?: string }>('/api/auth/forgot-password', {
     method: 'POST',
     body: JSON.stringify({ email }),
   }),
