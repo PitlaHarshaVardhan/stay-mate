@@ -73,7 +73,7 @@ export default function App() {
     return user ? content : <Navigate to="/login" replace />;
   };
 
-  const loadUser = async () => {
+  const loadUser = async (preserveUserOnFailure = false) => {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 10000);
 
@@ -91,9 +91,11 @@ export default function App() {
         setNotifications(notificationsResponse.data ?? []);
       }
     } catch (err) {
-      setUser(null);
-      setConnections([]);
-      setNotifications([]);
+      if (!preserveUserOnFailure) {
+        setUser(null);
+        setConnections([]);
+        setNotifications([]);
+      }
       const isExpectedUnauthenticated =
         err instanceof Error &&
         ['No authentication token', 'Invalid authentication token', 'User not found'].includes(err.message);
@@ -131,10 +133,13 @@ export default function App() {
     }
   };
 
-  const onAuthSuccess = async () => {
-    await loadUser();
+  const onAuthSuccess = (authenticatedUser: UserType) => {
+    setUser(authenticatedUser);
+    setLoading(false);
+    setMobileNavOpen(false);
     showToast('Logged in successfully! Welcome to StayMate.', 'success');
-    navigate('/');
+    navigate('/', { replace: true });
+    void loadUser(true);
   };
 
   const handleAccept = async (connectionId: string) => {
@@ -598,7 +603,7 @@ function LandingPage({ user }: { user: UserType | null }) {
   );
 }
 
-function AuthPage({ mode, onSuccess }: { mode: 'login' | 'register'; onSuccess: () => void }) {
+function AuthPage({ mode, onSuccess }: { mode: 'login' | 'register'; onSuccess: (user: UserType) => void }) {
   return (
     <div className="mx-auto max-w-md py-4 sm:py-8">
       <AuthForm mode={mode} onSuccess={onSuccess} />

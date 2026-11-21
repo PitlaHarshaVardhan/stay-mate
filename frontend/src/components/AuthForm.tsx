@@ -7,7 +7,7 @@ type AuthMode = 'login' | 'register';
 
 type AuthFormProps = {
   mode: AuthMode;
-  onSuccess: () => void;
+  onSuccess: (user: { id: string; name: string; email: string; phone?: string }) => void;
 };
 
 export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
@@ -40,14 +40,15 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
     setError('');
 
     try {
+      let authResponse;
       if (currentMode === 'login') {
-        await api.login({
+        authResponse = await api.login({
           email: form.email ? form.email.trim() : undefined,
           phone: form.phone ? form.phone.trim() : undefined,
           password: form.password,
         });
       } else {
-        await api.register({
+        authResponse = await api.register({
           name: form.name.trim(),
           email: form.email.trim(),
           phone: form.phone.trim(),
@@ -55,7 +56,10 @@ export default function AuthForm({ mode, onSuccess }: AuthFormProps) {
         });
       }
 
-      onSuccess();
+      if (!authResponse.data) {
+        throw new Error('Login succeeded, but the user session could not be loaded.');
+      }
+      onSuccess(authResponse.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to continue. Please check your credentials.');
     } finally {
