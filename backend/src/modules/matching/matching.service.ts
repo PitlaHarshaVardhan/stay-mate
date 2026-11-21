@@ -1,3 +1,6 @@
+import { notFound } from '../../errors/AppError';
+import { matchingRepository } from './matching.repository';
+
 // 1.1.0: location is no longer a hard gate — pinned locations are scored by
 // real straight-line (haversine) distance, and unpinned pairs fall back to
 // city/area string comparison with a low provisional score.
@@ -396,4 +399,54 @@ export function buildRankedMatches(current: MatchingProfile, candidates: MatchCa
 export function calculateCompatibilityScore(a: MatchingProfile, b: MatchingProfile): number {
   const result = calculateCompatibility(a, b);
   return result.eligible ? result.compatibilityScore ?? 0 : 0;
+}
+
+function sanitizePreference(preference: any) {
+  return {
+    city: preference.city,
+    area: preference.area,
+    budgetMin: preference.budgetMin,
+    budgetMax: preference.budgetMax,
+    moveInDate: preference.moveInDate,
+    roomType: preference.roomType,
+    roommatesRequired: preference.roommatesRequired,
+    smokingPreference: preference.smokingPreference,
+    drinkingPreference: preference.drinkingPreference,
+    foodPreference: preference.foodPreference,
+    sleepSchedule: preference.sleepSchedule,
+    cleanlinessPreference: preference.cleanlinessPreference,
+    genderPreference: preference.genderPreference,
+    latitude: preference.latitude,
+    longitude: preference.longitude,
+  };
+}
+
+function sanitizeProfile(profile: any) {
+  if (!profile) return undefined;
+  return {
+    profilePhoto: profile.profilePhoto,
+    occupationType: profile.occupationType,
+    bio: profile.bio,
+  };
+}
+
+export async function getMatchingPeopleForUser(userId: string): Promise<RankedMatch[]> {
+  const [currentPref, currentProfile, blockedRecords] = await matchingRepository.findCurrentData(userId);
+  if (!currentPref) {
+    throw notFound('User preference profile not found', 'PREFERENCE_NOT_FOUND');
+  }
+  const blockedIds = blockedRecords.map((block: any) =>
+    block.blockerId === userId ? block.blockedId : block.blockerId,
+  );
+  const candidates = await matchingRepository.findCandidates([userId, ...blockedIds]);
+  return buildRankedMatches(
+    { ...currentPref, gender: currentProfile?.gender } as MatchingProfile,
+    candidates.map((candidate: any) => ({
+      userId: candidate.user.id,
+      userName: candidate.user.name,
+      preference: sanitizePreference(candidate),
+      gender: candidate.user?.profile?.gender,
+      profile: sanitizeProfile(candidate.user?.profile),
+    })),
+  );
 }

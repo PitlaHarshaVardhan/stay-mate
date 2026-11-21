@@ -98,7 +98,7 @@ export default function App() {
       }
       const isExpectedUnauthenticated =
         err instanceof Error &&
-        ['No authentication token', 'Invalid authentication token', 'User not found'].includes(err.message);
+        ['Authentication required', 'No authentication token', 'Invalid authentication token', 'User not found'].includes(err.message);
       if (!isExpectedUnauthenticated) {
         showToast(
           controller.signal.aborted

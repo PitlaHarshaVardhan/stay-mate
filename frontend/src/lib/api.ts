@@ -23,7 +23,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<ApiR
   const payload = (await response.json().catch(() => ({}))) as ApiResponse<T>;
 
   if (!response.ok) {
-    throw new Error(payload?.error?.message ?? 'Something went wrong');
+    throw new Error(payload?.message ?? payload?.error?.message ?? 'Something went wrong');
   }
 
   return payload;

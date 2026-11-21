@@ -21,7 +21,21 @@ import reviewsRoutes from './modules/reviews/reviews.routes';
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: config.clientUrl, credentials: true }));
+app.use(cors({
+  credentials: true,
+  origin(origin, callback) {
+    const allowedOrigins = new Set([
+      config.clientUrl,
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+    ]);
+    if (!origin || allowedOrigins.has(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error('Origin not allowed by CORS'));
+  },
+}));
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
