@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Check, MessageSquare, Trash2, UserCheck, Clock, XCircle, ArrowRight } from 'lucide-react';
 import Pagination, { PAGE_SIZE } from './Pagination';
 import type { ConnectionItem } from '../types';
+import { Badge, Button, Heading, InlineText, Paragraph } from './ui';
 
 type ConnectionBoardProps = {
   userId: string;
@@ -48,34 +49,29 @@ export default function ConnectionBoard({
                 size="md"
               />
               <div>
-                <h4 className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                <Heading level={4} className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
                   {otherUser?.name ?? 'User'}
-                </h4>
+                </Heading>
                 <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-                  <span>{directionLabel}</span>
+                  <InlineText className="inline-block h-1.5 w-1.5 rounded-full bg-slate-400"></InlineText>
+                  <InlineText>{directionLabel}</InlineText>
                 </div>
               </div>
             </div>
 
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide uppercase ${
-                item.status === 'ACCEPTED'
-                  ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60'
-                  : item.status === 'PENDING'
-                  ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/60'
-                  : 'bg-rose-50 text-rose-700 ring-1 ring-rose-200/60'
-              }`}
+            <Badge
+              variant="status"
+              tone={item.status === 'ACCEPTED' ? 'success' : item.status === 'PENDING' ? 'warning' : 'danger'}
             >
               {item.status === 'ACCEPTED' && <UserCheck size={12} />}
               {item.status === 'PENDING' && <Clock size={12} />}
               {item.status === 'REJECTED' && <XCircle size={12} />}
-              <span>{item.status}</span>
-            </span>
+              <InlineText>{item.status}</InlineText>
+            </Badge>
           </div>
 
           <div className="mt-4 rounded-xl bg-slate-50/80 p-3 text-xs text-slate-600 border border-slate-100">
-            <span className="font-medium text-slate-700">Occupation: </span>
+            <InlineText className="font-medium text-slate-700">Occupation: </InlineText>
             {otherUser?.profile?.occupationType ? otherUser.profile.occupationType : 'Not specified'}
           </div>
         </div>
@@ -84,54 +80,59 @@ export default function ConnectionBoard({
           <div className="flex flex-wrap items-center gap-2">
             {item.status === 'PENDING' && isIncoming && (
               <>
-                <button
+                <Button
                   type="button"
                   onClick={() => onAccept(item.id)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                  variant="success"
+                  size="xs"
                 >
                   <Check size={14} /> Accept
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => onReject(item.id)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-rose-600"
+                  variant="danger"
+                  size="xs"
                 >
                   <XCircle size={14} /> Reject
-                </button>
+                </Button>
               </>
             )}
             {item.status === 'PENDING' && !isIncoming && (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+              <InlineText className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
                 <Clock size={13} /> Awaiting response
-              </span>
+              </InlineText>
             )}
             {item.status === 'ACCEPTED' && (
               <>
-                <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                <InlineText className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
                   <UserCheck size={13} /> Connected
-                </span>
+                </InlineText>
                 {onMessage && otherUser?.id && (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => onMessage(otherUser.id)}
-                    className="inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                    variant="primary"
+                    size="xs"
                   >
                     <MessageSquare size={13} /> Chat <ArrowRight size={12} />
-                  </button>
+                  </Button>
                 )}
               </>
             )}
           </div>
 
-          <button
+          <Button
             type="button"
             onClick={() => onDelete(item.id)}
-            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-slate-100 hover:text-rose-600"
+            variant="ghost"
+            size="xs"
+            className="text-slate-400 hover:text-rose-600"
             title="Remove connection"
           >
             <Trash2 size={13} />
-            <span className="sr-only">Remove</span>
-          </button>
+            <InlineText className="sr-only">Remove</InlineText>
+          </Button>
         </div>
       </div>
     );
@@ -229,10 +230,10 @@ function Section({
     <section className="space-y-4">
       <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-          <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+          <Heading level={3} className="text-lg font-bold text-slate-900">{title}</Heading>
+          <Badge variant="count" tone="primary">
             {items.length}
-          </span>
+          </Badge>
         </div>
       </div>
 

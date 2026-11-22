@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { MessageSquare, RefreshCw, Send, User } from 'lucide-react';
 import { api } from '../lib/api';
 import Pagination, { PAGE_SIZE } from './Pagination';
+import { Button, Heading, InlineText, Paragraph, TextInput } from './ui';
 
 type ChatUser = {
   id: string;
@@ -148,7 +149,7 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
     return (
       <div className="flex min-h-[300px] items-center justify-center rounded-2xl bg-white p-8 text-slate-500 ring-1 ring-slate-200">
         <RefreshCw className="mr-2 h-5 w-5 animate-spin text-indigo-600" />
-        <span>Loading messages...</span>
+        <InlineText>Loading messages...</InlineText>
       </div>
     );
   }
@@ -162,25 +163,27 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
               <MessageSquare size={16} />
             </div>
-            <h2 className="text-lg font-bold text-slate-900">Chats</h2>
+            <Heading level={2} className="text-lg font-bold text-slate-900">Chats</Heading>
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => void handleRefresh()}
             disabled={refreshing}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+            variant="secondary"
+            size="xs"
+            className="text-slate-600"
             title="Refresh conversations"
           >
             <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-            <span>Refresh</span>
-          </button>
+            <InlineText>Refresh</InlineText>
+          </Button>
         </div>
 
         <div className="flex-1 space-y-2">
           {conversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center text-xs text-slate-500">
               <MessageSquare size={24} className="mb-2 text-slate-300" />
-              <span>No conversations yet. Connect with a roommate to start chatting!</span>
+              <InlineText>No conversations yet. Connect with a roommate to start chatting!</InlineText>
             </div>
           ) : (
             visibleConversations.map((conversation) => {
@@ -190,7 +193,7 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
               const isSelected = selectedConversationId === conversation.id;
 
               return (
-                <button
+                <Button
                   key={conversation.id}
                   type="button"
                   onClick={() => {
@@ -200,11 +203,8 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
                       setSelectedConversationId(conversation.id);
                     }
                   }}
-                  className={`w-full rounded-2xl p-3 text-left transition-all duration-150 ${
-                    isSelected
-                      ? 'border border-indigo-200 bg-indigo-50/80 shadow-sm'
-                      : 'border border-transparent bg-slate-50/70 hover:bg-slate-100/70'
-                  }`}
+                  variant="conversation"
+                  selected={isSelected}
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 font-bold text-white shadow-xs text-sm">
@@ -212,12 +212,12 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">
-                        <span className="truncate font-semibold text-slate-900 text-sm">{title}</span>
+                        <InlineText className="truncate font-semibold text-slate-900 text-sm">{title}</InlineText>
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-slate-500">{lastMessage}</p>
+                      <Paragraph className="mt-0.5 truncate text-xs text-slate-500">{lastMessage}</Paragraph>
                     </div>
                   </div>
-                </button>
+                </Button>
               );
             })
           )}
@@ -243,15 +243,15 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
                   {otherMembers[0]?.user?.name ? otherMembers[0].user.name.slice(0, 2).toUpperCase() : 'U'}
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base leading-tight">
+                  <Heading level={3} className="font-bold text-slate-900 text-base leading-tight">
                     {otherMembers.length > 0
                       ? otherMembers.map((member: any) => member.user?.name ?? 'User').join(', ')
                       : 'Conversation'}
-                  </h3>
-                  <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>{selectedConversation.type === 'DIRECT' ? 'Active Chat' : 'Group Room'}</span>
-                  </span>
+                  </Heading>
+                  <InlineText className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                    <InlineText className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></InlineText>
+                    <InlineText>{selectedConversation.type === 'DIRECT' ? 'Active Chat' : 'Group Room'}</InlineText>
+                  </InlineText>
                 </div>
               </div>
             </div>
@@ -261,7 +261,7 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
                 {messagesLoading ? (
                   <div role="status" className="flex h-48 items-center justify-center text-xs text-slate-400">
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin text-indigo-600" />
-                    <span>Loading chat messages...</span>
+                    <InlineText>Loading chat messages...</InlineText>
                   </div>
                 ) : messagesError ? (
                   <div role="alert" className="flex h-48 items-center justify-center text-center text-xs text-rose-600">
@@ -270,7 +270,7 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
                 ) : messages.length === 0 ? (
                   <div className="flex h-48 flex-col items-center justify-center text-center text-xs text-slate-400">
                     <MessageSquare size={32} className="mb-2 text-slate-300" />
-                    <span>No messages yet. Send a message to say hello!</span>
+                    <InlineText>No messages yet. Send a message to say hello!</InlineText>
                   </div>
                 ) : (
                   messages
@@ -287,8 +287,8 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
                                 : 'bg-white text-slate-800 border border-slate-200/80 rounded-bl-xs'
                             }`}
                           >
-                            <p>{message.content}</p>
-                            <span
+                            <Paragraph>{message.content}</Paragraph>
+                            <InlineText
                               className={`mt-1 block text-[10px] text-right ${
                                 isMine ? 'text-indigo-200' : 'text-slate-400'
                               }`}
@@ -299,7 +299,7 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
                                     minute: '2-digit',
                                   })
                                 : ''}
-                            </span>
+                            </InlineText>
                           </div>
                         </div>
                       );
@@ -309,7 +309,8 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <input
+                <TextInput
+                  variant="chat"
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
                   onKeyDown={(event) => {
@@ -319,25 +320,26 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
                     }
                   }}
                   placeholder="Type your message..."
-                  className="flex-1 rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 transition focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
                 />
-                <button
+                <Button
                   type="button"
                   onClick={() => void sendMessage()}
                   disabled={!draft.trim()}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40 shrink-0"
+                  variant="primary"
+                  size="icon"
+                  className="shrink-0"
                   aria-label="Send message"
                 >
                   <Send size={18} />
-                </button>
+                </Button>
               </div>
             </div>
           </>
         ) : (
           <div className="flex h-full min-h-[350px] flex-col items-center justify-center text-center text-slate-400">
             <MessageSquare size={44} className="mb-3 text-slate-300" />
-            <h4 className="text-base font-semibold text-slate-700">No conversation selected</h4>
-            <p className="mt-1 text-xs text-slate-500">Pick a chat from the sidebar or connect with new roommates.</p>
+            <Heading level={4} className="text-base font-semibold text-slate-700">No conversation selected</Heading>
+            <Paragraph className="mt-1 text-xs text-slate-500">Pick a chat from the sidebar or connect with new roommates.</Paragraph>
           </div>
         )}
       </section>

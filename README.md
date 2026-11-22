@@ -43,6 +43,12 @@ npm run dev
 For local development, set `VITE_API_URL=http://localhost:4000` in `frontend/.env.local`.
 The backend loads `backend/.env.local` outside production, overriding any base `.env` values.
 
+## Shared frontend UI
+
+Shared primitives are exported from `frontend/src/components/ui.tsx`: `Button`, `TextInput`, `Select`, `TextArea`, `FormLabel`, `Paragraph`, `InlineText`, `Heading`, `Surface`, and `Badge`. Pass native HTML props and choose shared `variant`, `tone`, `size`, or heading `level` values where available. Existing page-specific class names are retained during migration to preserve appearance; use shared variants for new or deliberately standardized styles. Keep feature layout in its page and validation, API calls, and authorization rules in their existing frontend and backend layers.
+
+The shared variants follow the app palette: indigo for primary actions and emphasis, white/slate for neutral surfaces, emerald for success, amber for pending/warning, and rose for errors or destructive actions. Keep additions within these semantic variants rather than introducing page-specific color rules.
+
 ## Production origins
 
 - Production frontend requests use the same-origin `/api/*` proxy in `frontend/vercel.json`; update its destination if the deployed API origin changes. Do not set `VITE_API_URL` for the Vercel production build.

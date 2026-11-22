@@ -29,6 +29,18 @@ import ConnectionBoard from './components/ConnectionBoard';
 import LocationAutocomplete from './components/LocationAutocomplete';
 import PasswordRecoveryPage from './components/PasswordRecoveryPage';
 import Pagination, { PAGE_SIZE } from './components/Pagination';
+import {
+  Badge,
+  Button,
+  FormLabel,
+  Heading,
+  InlineText,
+  Paragraph,
+  Select,
+  Surface,
+  TextArea,
+  TextInput,
+} from './components/ui';
 import { api } from './lib/api';
 import type { ConnectionItem, User as UserType } from './types';
 
@@ -66,7 +78,7 @@ export default function App() {
       return (
         <div className="flex min-h-[300px] items-center justify-center text-slate-500">
           <Sparkles className="mr-2 h-5 w-5 animate-spin text-indigo-600" />
-          <span>Checking your session...</span>
+          <InlineText>Checking your session...</InlineText>
         </div>
       );
     }
@@ -213,14 +225,16 @@ export default function App() {
             {toast.type === 'success' && <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />}
             {toast.type === 'error' && <AlertCircle size={18} className="text-rose-600 shrink-0" />}
             {toast.type === 'info' && <Bell size={18} className="text-indigo-600 shrink-0" />}
-            <span className="flex-1">{toast.message}</span>
-            <button
+            <InlineText className="flex-1">{toast.message}</InlineText>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setToast(null)}
-              className="text-slate-400 hover:text-slate-600"
+              className="h-6 w-6 rounded-none p-0 text-slate-400 hover:bg-transparent hover:text-slate-600"
               aria-label="Close notification"
             >
               <X size={15} />
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -234,9 +248,9 @@ export default function App() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white shadow-sm shadow-indigo-200 transition-transform group-hover:scale-105">
                 <Sparkles size={18} />
               </div>
-              <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 to-violet-700 bg-clip-text text-transparent">
+              <InlineText className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 to-violet-700 bg-clip-text text-transparent">
                 StayMate
-              </span>
+              </InlineText>
             </Link>
 
             {/* Desktop Navigation */}
@@ -277,20 +291,22 @@ export default function App() {
                         photo={user.profile?.profilePhoto}
                         size="sm"
                       />
-                      <span className="max-w-36 truncate text-xs font-bold text-slate-800">
+                      <InlineText className="max-w-36 truncate text-xs font-bold text-slate-800">
                         {user.name}
-                      </span>
+                      </InlineText>
                     </Link>
 
-                    <button
+                    <Button
                       type="button"
                       onClick={() => void handleLogout()}
-                      className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                      variant="secondary"
+                      size="xs"
+                      className="text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
                       title="Logout"
                     >
                       <LogOut size={13} />
-                      <span>Logout</span>
-                    </button>
+                      <InlineText>Logout</InlineText>
+                    </Button>
                   </div>
                 </>
               ) : (
@@ -319,18 +335,20 @@ export default function App() {
                   className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-2.5 shadow-xs"
                 >
                   <AvatarPreview name={user.name} photo={user.profile?.profilePhoto} size="sm" />
-                  <span className="max-w-28 truncate text-xs font-bold text-slate-800">{user.name}</span>
+                  <InlineText className="max-w-28 truncate text-xs font-bold text-slate-800">{user.name}</InlineText>
                 </Link>
               )}
 
-              <button
+              <Button
                 type="button"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                variant="secondary"
+                size="icon"
+                className="h-9 w-9 text-slate-700"
                 aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
                 onClick={() => setMobileNavOpen((open) => !open)}
               >
                 {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -346,15 +364,18 @@ export default function App() {
                       <div className="text-xs text-slate-500 truncate">{user.email}</div>
                     </div>
                   </div>
-                  <button
+                  <Button
+                    type="button"
                     onClick={() => {
                       setMobileNavOpen(false);
                       void handleLogout();
                     }}
-                    className="rounded-xl border border-rose-200 bg-white px-2.5 py-1 text-xs font-semibold text-rose-600"
+                    variant="secondary"
+                    size="xs"
+                    className="border-rose-200 text-rose-600 hover:bg-rose-50"
                   >
                     Logout
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -534,14 +555,14 @@ function LandingPage({ user }: { user: UserType | null }) {
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-100 backdrop-blur-sm">
             <Sparkles size={14} />
-            <span>Find your roommate circle before moving</span>
+            <InlineText>Find your roommate circle before moving</InlineText>
           </div>
-          <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl leading-tight sm:leading-tight">
+          <Heading level={1} className="mt-4 text-3xl font-black tracking-tight sm:text-5xl leading-tight sm:leading-tight">
             Moving to a new city? Connect with people who match your lifestyle.
-          </h1>
-          <p className="mt-4 text-base text-indigo-100 sm:text-lg leading-relaxed">
+          </Heading>
+          <Paragraph className="mt-4 text-base text-indigo-100 sm:text-lg leading-relaxed">
             StayMate brings together prospective roommates by destination city, budget range, move-in timeline, and living preferences.
-          </p>
+          </Paragraph>
 
           <div className="mt-8 flex flex-wrap gap-3">
             {user ? (
@@ -594,8 +615,8 @@ function LandingPage({ user }: { user: UserType | null }) {
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 font-bold text-indigo-600 text-xs">
               {step.num}
             </div>
-            <h3 className="mt-3 font-bold text-slate-900 text-base">{step.title}</h3>
-            <p className="mt-1 text-xs text-slate-500 leading-relaxed">{step.desc}</p>
+            <Heading level={3} className="mt-3 font-bold text-slate-900 text-base">{step.title}</Heading>
+            <Paragraph className="mt-1 text-xs text-slate-500 leading-relaxed">{step.desc}</Paragraph>
           </div>
         ))}
       </section>
@@ -647,27 +668,29 @@ function HomeDashboard({
             <AvatarPreview name={user.name} photo={user.profile?.profilePhoto} size="lg" />
             <div>
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active Member
-                </span>
+                <Badge variant="count" tone="success" className="gap-1">
+                  <InlineText className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></InlineText> Active Member
+                </Badge>
               </div>
-              <h2 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">
+              <Heading level={2} className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">
                 Welcome back, {user.name} 👋
-              </h2>
-              <p className="mt-1 text-xs text-slate-500">
+              </Heading>
+              <Paragraph className="mt-1 text-xs text-slate-500">
                 Manage your roommate connections, search for matches, or chat with prospective flatmates.
-              </p>
+              </Paragraph>
             </div>
           </div>
 
-          <button
+          <Button
             type="button"
             onClick={() => void handleRefreshClick()}
             disabled={refreshing}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50 disabled:opacity-50 shrink-0"
+            variant="secondary"
+            size="md"
+            className="shrink-0 rounded-2xl text-xs"
           >
-            <span>{refreshing ? 'Updating...' : 'Refresh data'}</span>
-          </button>
+            <InlineText>{refreshing ? 'Updating...' : 'Refresh data'}</InlineText>
+          </Button>
         </div>
       </div>
 
@@ -735,17 +758,17 @@ function HomeDashboard({
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 border border-slate-100 group-hover:scale-105 transition-transform">
                   {card.icon}
                 </div>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 uppercase tracking-wider">
+                <InlineText className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 uppercase tracking-wider">
                   {card.badge}
-                </span>
+                </InlineText>
               </div>
-              <h3 className="mt-3 font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+              <Heading level={3} className="mt-3 font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
                 {card.label}
-              </h3>
-              <p className="mt-1 text-xs text-slate-500 leading-relaxed">{card.desc}</p>
+              </Heading>
+              <Paragraph className="mt-1 text-xs text-slate-500 leading-relaxed">{card.desc}</Paragraph>
             </div>
             <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-indigo-600">
-              <span>Open</span>
+              <InlineText>Open</InlineText>
               <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
             </div>
           </Link>
@@ -757,7 +780,7 @@ function HomeDashboard({
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <Bell size={18} className="text-indigo-600" />
-            <h3 className="font-bold text-slate-900">Recent Notifications</h3>
+            <Heading level={3} className="font-bold text-slate-900">Recent Notifications</Heading>
           </div>
           <Link to="/messages" className="text-xs font-semibold text-indigo-600 hover:underline">
             Go to messages
@@ -779,14 +802,14 @@ function HomeDashboard({
                   <div className="text-xs font-bold text-slate-800">{notification.title}</div>
                   <div className="mt-0.5 text-xs text-slate-500">{notification.message}</div>
                 </div>
-                <span className="text-[10px] text-slate-400 shrink-0">
+                <InlineText className="text-[10px] text-slate-400 shrink-0">
                   {notification.createdAt
                     ? new Date(notification.createdAt).toLocaleDateString([], {
                         month: 'short',
                         day: 'numeric',
                       })
                     : ''}
-                </span>
+                </InlineText>
               </div>
             ))
           )}
@@ -822,10 +845,10 @@ function ConnectionsPage({
             <Users size={22} />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Roommate Connections</h2>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <Heading level={2} className="text-2xl font-bold text-slate-900">Roommate Connections</Heading>
+            <Paragraph className="mt-0.5 text-xs text-slate-500">
               Manage connection requests, review incoming inquiries, and message your confirmed flatmate matches.
-            </p>
+            </Paragraph>
           </div>
         </div>
       </div>
@@ -948,16 +971,16 @@ function ProfilePage({
   };
 
   return (
-    <div className="mx-auto max-w-2xl rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs">
+    <Surface variant="form" className="mx-auto max-w-2xl">
       <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
           <User size={22} />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Your Profile</h2>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <Heading level={2} className="text-2xl font-bold text-slate-900">Your Profile</Heading>
+          <Paragraph className="mt-0.5 text-xs text-slate-500">
             Keep your profile up to date so potential roommates know who you are.
-          </p>
+          </Paragraph>
         </div>
       </div>
 
@@ -966,87 +989,89 @@ function ProfilePage({
         <div className="flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-slate-200/70 bg-slate-50/70 p-4">
           <AvatarPreview name={user.name} photo={form.profilePhoto} size="lg" />
           <div className="min-w-0 flex-1 text-center sm:text-left">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700" htmlFor="profile-photo">
+            <FormLabel variant="inline" htmlFor="profile-photo">
               Profile Photo
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="file"
               id="profile-photo"
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(event) => void onPhotoSelected(event)}
-              className="mt-2 block w-full text-xs text-slate-500 file:mr-3 file:rounded-xl file:border-0 file:bg-white file:px-3 file:py-1.5 file:font-semibold file:text-indigo-600 file:shadow-xs hover:file:bg-indigo-50"
             />
             {form.profilePhoto && (
-              <button
+              <Button
                 type="button"
                 onClick={() => setForm((curr) => ({ ...curr, profilePhoto: '' }))}
-                className="mt-1.5 text-xs font-semibold text-rose-600 hover:underline"
+                variant="text"
+                size="xs"
+                className="mt-1.5 text-rose-600 hover:text-rose-700"
               >
                 Remove photo
-              </button>
+              </Button>
             )}
-            {photoError && <p className="mt-1 text-xs text-rose-600">{photoError}</p>}
+            {photoError && <Paragraph className="mt-1 text-xs text-rose-600">{photoError}</Paragraph>}
           </div>
         </div>
 
         {/* Age & Gender */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Age
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="subtle"
               type="number"
               min="18"
               max="80"
               value={form.age}
               onChange={(e) => setForm({ ...form, age: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
               placeholder="e.g. 24"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Gender
-            </label>
-            <select
+            </FormLabel>
+            <Select
+              variant="subtle"
               value={form.gender}
               onChange={(e) => setForm({ ...form, gender: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             >
               <option value="MALE">Male</option>
               <option value="FEMALE">Female</option>
               <option value="OTHER">Other</option>
               <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
-            </select>
+            </Select>
           </div>
         </div>
 
         {/* Occupation & College */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Occupation
-            </label>
-            <select
+            </FormLabel>
+            <Select
+              variant="subtle"
               value={form.occupationType}
               onChange={(e) => setForm({ ...form, occupationType: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             >
               <option value="STUDENT">Student</option>
               <option value="EMPLOYEE">Working Professional</option>
               <option value="INTERN">Intern</option>
               <option value="OTHER">Other</option>
-            </select>
+            </Select>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               College / University
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="subtle"
               value={form.college}
               onChange={(e) => setForm({ ...form, college: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
               placeholder="e.g. IIT Delhi, BITS Pilani"
             />
           </div>
@@ -1054,13 +1079,13 @@ function ProfilePage({
 
         {/* Company */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+          <FormLabel>
             Company / Employer
-          </label>
-          <input
+          </FormLabel>
+          <TextInput
+            variant="subtle"
             value={form.company}
             onChange={(e) => setForm({ ...form, company: e.target.value })}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             placeholder="e.g. Google, Microsoft, Startup"
           />
         </div>
@@ -1068,35 +1093,38 @@ function ProfilePage({
         {/* Bio with Live Character Counter */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+            <FormLabel variant="inline">
               Short Bio
-            </label>
-            <span
+            </FormLabel>
+            <InlineText
               className={`text-xs ${
                 form.bio.length > 240 ? 'font-bold text-amber-600' : 'text-slate-400'
               }`}
             >
               {form.bio.length}/250 characters
-            </span>
+            </InlineText>
           </div>
-          <textarea
+          <TextArea
+            variant="subtle"
             maxLength={250}
             value={form.bio}
             onChange={(e) => setForm({ ...form, bio: e.target.value })}
-            className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none leading-relaxed"
+            className="min-h-24 leading-relaxed"
             placeholder="Write a brief introduction about your schedule, hobbies, or what you appreciate in flatmates..."
           />
         </div>
 
-        <button
+        <Button
           type="submit"
           disabled={saving}
-          className="w-full rounded-2xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 disabled:opacity-50"
+          variant="primary"
+          size="lg"
+          className="w-full shadow-md shadow-indigo-200"
         >
           {saving ? 'Saving changes...' : 'Save Profile'}
-        </button>
+        </Button>
       </form>
-    </div>
+    </Surface>
   );
 }
 
@@ -1199,16 +1227,16 @@ function PreferencesPage({
   };
 
   return (
-    <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs">
+    <Surface variant="form" className="mx-auto max-w-3xl">
       <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
           <Sliders size={22} />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Living Preferences</h2>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <Heading level={2} className="text-2xl font-bold text-slate-900">Living Preferences</Heading>
+          <Paragraph className="mt-0.5 text-xs text-slate-500">
             Set your target city, budget constraints, room types, and roommate compatibility filters.
-          </p>
+          </Paragraph>
         </div>
       </div>
 
@@ -1221,60 +1249,60 @@ function PreferencesPage({
             }
           />
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Destination City *
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="readOnly"
               required
               readOnly
               value={form.city}
               placeholder="Filled from the place you select above"
-              className="w-full cursor-default rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Locality / Area *
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="readOnly"
               required
               readOnly
               value={form.area}
               placeholder="Filled from the place you select above"
-              className="w-full cursor-default rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none"
             />
           </div>
-          <p className="text-xs text-slate-500 sm:col-span-2">
+          <Paragraph className="text-xs text-slate-500 sm:col-span-2">
             Search a place above and pick a result from the list — City and Area are filled automatically and can't be edited by hand.
-          </p>
+          </Paragraph>
         </div>
 
         {/* Budget */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Budget Min (₹)
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="subtle"
               type="number"
               min="0"
               step="500"
               value={form.budgetMin}
               onChange={(e) => setForm({ ...form, budgetMin: Number(e.target.value) })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Budget Max (₹)
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="subtle"
               type="number"
               min="0"
               step="500"
               value={form.budgetMax}
               onChange={(e) => setForm({ ...form, budgetMax: Number(e.target.value) })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             />
           </div>
         </div>
@@ -1282,155 +1310,157 @@ function PreferencesPage({
         {/* Move in Date & Room Type */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Target Move-in Date
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="subtle"
               type="date"
               value={form.moveInDate}
               onChange={(e) => setForm({ ...form, moveInDate: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Room Sharing Preference
-            </label>
-            <select
+            </FormLabel>
+            <Select
+              variant="subtle"
               value={form.roomType}
               onChange={(e) => setForm({ ...form, roomType: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             >
               <option value="ANY">Any Room Type</option>
               <option value="SINGLE">Single Private Room</option>
               <option value="DOUBLE">Double Sharing</option>
               <option value="TRIPLE">Triple Sharing</option>
               <option value="FOUR_PLUS">Four Plus Sharing</option>
-            </select>
+            </Select>
           </div>
         </div>
 
         {/* Roommates & Gender */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Roommates Required
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="subtle"
               type="number"
               min="1"
               max="4"
               value={form.roommatesRequired}
               onChange={(e) => setForm({ ...form, roommatesRequired: Number(e.target.value) })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Preferred Roommate Gender
-            </label>
-            <select
+            </FormLabel>
+            <Select
+              variant="subtle"
               value={form.genderPreference}
               onChange={(e) => setForm({ ...form, genderPreference: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             >
               <option value="ANY">Any Gender</option>
               <option value="MALE">Male Only</option>
               <option value="FEMALE">Female Only</option>
-            </select>
+            </Select>
           </div>
         </div>
 
         {/* Lifestyle: Smoking & Drinking */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Smoking Preference
-            </label>
-            <select
+            </FormLabel>
+            <Select
+              variant="subtle"
               value={form.smokingPreference}
               onChange={(e) => setForm({ ...form, smokingPreference: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             >
               <option value="NO_PREFERENCE">No Preference</option>
               <option value="NON_SMOKER">Non-Smoker Only</option>
               <option value="SMOKER">Smoker Friendly</option>
-            </select>
+            </Select>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Drinking Preference
-            </label>
-            <select
+            </FormLabel>
+            <Select
+              variant="subtle"
               value={form.drinkingPreference}
               onChange={(e) => setForm({ ...form, drinkingPreference: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             >
               <option value="NO_PREFERENCE">No Preference</option>
               <option value="NON_DRINKER">Non-Drinker Only</option>
               <option value="DRINKER">Drinker Friendly</option>
-            </select>
+            </Select>
           </div>
         </div>
 
         {/* Food & Sleep */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Diet / Food
-            </label>
-            <select
+            </FormLabel>
+            <Select
+              variant="subtle"
               value={form.foodPreference}
               onChange={(e) => setForm({ ...form, foodPreference: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             >
               <option value="ANY">Any Diet</option>
               <option value="VEG">Vegetarian Only</option>
               <option value="NON_VEG">Non-Vegetarian</option>
               <option value="VEGAN">Vegan</option>
-            </select>
+            </Select>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Sleep Schedule
-            </label>
-            <select
+            </FormLabel>
+            <Select
+              variant="subtle"
               value={form.sleepSchedule}
               onChange={(e) => setForm({ ...form, sleepSchedule: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             >
               <option value="FLEXIBLE">Flexible / Moderate</option>
               <option value="EARLY">Early Bird (Sleep early)</option>
               <option value="LATE">Night Owl (Sleep late)</option>
-            </select>
+            </Select>
           </div>
         </div>
 
         {/* Cleanliness */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+          <FormLabel>
             Cleanliness Standard
-          </label>
-          <select
+          </FormLabel>
+          <Select
+            variant="subtle"
             value={form.cleanlinessPreference}
             onChange={(e) => setForm({ ...form, cleanlinessPreference: e.target.value })}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
           >
             <option value="LOW">Relaxed</option>
             <option value="MEDIUM">Balanced / Standard</option>
             <option value="HIGH">Very Clean & Tidy</option>
-          </select>
+          </Select>
         </div>
 
-        <button
+        <Button
           type="submit"
           disabled={saving}
-          className="w-full rounded-2xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 disabled:opacity-50"
+          variant="primary"
+          size="lg"
+          className="w-full shadow-md shadow-indigo-200"
         >
           {saving ? 'Saving preferences...' : 'Save Preferences'}
-        </button>
+        </Button>
       </form>
-    </div>
+    </Surface>
   );
 }
 
@@ -1539,10 +1569,10 @@ function MatchingPage({
             <Sparkles size={22} />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Roommate Recommendations</h2>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <Heading level={2} className="text-2xl font-bold text-slate-900">Roommate Recommendations</Heading>
+            <Paragraph className="mt-0.5 text-xs text-slate-500">
               Profiles ranked by compatibility with your destination, budget, room preferences, and lifestyle habits.
-            </p>
+            </Paragraph>
           </div>
         </div>
       </div>
@@ -1550,17 +1580,17 @@ function MatchingPage({
       {loading ? (
         <div className="flex min-h-[300px] items-center justify-center rounded-3xl bg-white p-8 text-slate-500 border border-slate-200/80">
           <Sparkles className="mr-2 h-5 w-5 animate-spin text-indigo-600" />
-          <span>Searching for compatible flatmates...</span>
+          <InlineText>Searching for compatible flatmates...</InlineText>
         </div>
       ) : needsPreferences ? (
         <div className="rounded-3xl border border-indigo-100 bg-white p-8 text-center shadow-xs">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 mb-4">
             <Sliders size={28} />
           </div>
-          <h3 className="text-xl font-bold text-slate-900">Set your living preferences first</h3>
-          <p className="mt-2 mx-auto max-w-md text-sm text-slate-500 leading-relaxed">
+          <Heading level={3} className="text-xl font-bold text-slate-900">Set your living preferences first</Heading>
+          <Paragraph className="mt-2 mx-auto max-w-md text-sm text-slate-500 leading-relaxed">
             Please tell us your destination city, budget range, and room preferences so we can compute compatibility scores.
-          </p>
+          </Paragraph>
           <Link
             to="/preferences"
             className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700"
@@ -1585,15 +1615,12 @@ function MatchingPage({
                 visibleMatches.map((match) => {
                   const isSelected = selectedMatch?.user?.id === match.user.id;
                   return (
-                    <button
+                    <Button
                       key={match.user.id}
                       type="button"
                       onClick={() => setSelectedMatchId(match.user.id)}
-                      className={`group flex w-full min-w-0 flex-col justify-between rounded-2xl border bg-white p-5 text-left shadow-xs transition-all duration-200 ${
-                        isSelected
-                          ? 'border-indigo-500 ring-2 ring-indigo-100 shadow-md'
-                          : 'border-slate-200/80 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md'
-                      }`}
+                      variant="selectableCard"
+                      selected={isSelected}
                     >
                       <div>
                         <div className="flex min-w-0 items-center justify-between gap-2">
@@ -1604,66 +1631,66 @@ function MatchingPage({
                               size="md"
                             />
                             <div className="min-w-0">
-                              <h4 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
+                              <Heading level={4} className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
                                 {match.user.name}
-                              </h4>
-                              <p className="text-xs text-slate-500 truncate">
+                              </Heading>
+                              <Paragraph className="text-xs text-slate-500 truncate">
                                 {match.profile?.occupationType ?? 'Profile available'}
-                              </p>
+                              </Paragraph>
                             </div>
                           </div>
 
                           {match.eligible ? (
                             match.compatibilityScore !== null ? (
-                              <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200/60">
+                              <InlineText className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200/60">
                                 {match.compatibilityScore}% match
-                              </span>
+                              </InlineText>
                             ) : (
-                              <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 border border-slate-200/60">
+                              <InlineText className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 border border-slate-200/60">
                                 Not enough data
-                              </span>
+                              </InlineText>
                             )
                           ) : match.compatibilityScore !== null ? (
-                            <span className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 border border-rose-200/60">
+                            <InlineText className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 border border-rose-200/60">
                               {match.compatibilityScore}% match
-                            </span>
+                            </InlineText>
                           ) : (
-                            <span className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 border border-rose-200/60">
+                            <InlineText className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 border border-rose-200/60">
                               Not a match
-                            </span>
+                            </InlineText>
                           )}
                         </div>
-                        <p className="mt-1 pl-[3.25rem] text-[11px] text-slate-500">
+                        <Paragraph className="mt-1 pl-[3.25rem] text-[11px] text-slate-500">
                           {match.comparedCount}/{match.totalCriteria} preferences compared
                           {matchingCriteria(match).length > 0 && (
-                            <span className="ml-1 font-semibold text-emerald-600">
+                            <InlineText className="ml-1 font-semibold text-emerald-600">
                               · {matchingCriteria(match).length} in common
-                            </span>
+                            </InlineText>
                           )}
-                        </p>
+                        </Paragraph>
 
-                        <p className="mt-3 line-clamp-2 text-xs text-slate-600 leading-relaxed">
+                        <Paragraph className="mt-3 line-clamp-2 text-xs text-slate-600 leading-relaxed">
                           {match.profile?.bio ?? 'Looking for a friendly and compatible roommate.'}
-                        </p>
+                        </Paragraph>
                       </div>
 
                       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
-                        <span className="flex items-center gap-1 font-medium text-slate-700">
+                        <InlineText className="flex items-center gap-1 font-medium text-slate-700">
                           <MapPin size={12} className="text-indigo-600" />
                           {match.preference.city}
-                          <span className={`ml-1 rounded-full border px-2 py-0.5 font-semibold ${
+                          <InlineText className={`ml-1 rounded-full border px-2 py-0.5 font-semibold ${
                             distanceStatus(match).tone === 'distance'
                               ? 'border-sky-200/60 bg-sky-50 text-sky-700'
                               : 'border-slate-200 bg-slate-50 text-slate-500'
                           }`}>
                             {distanceStatus(match).content}
-                          </span>
-                        </span>
-                        <span className="font-semibold text-slate-900">
+                          </InlineText>
+                        </InlineText>
+                        <InlineText className="font-semibold text-slate-900">
                           ₹{match.preference.budgetMin} - ₹{match.preference.budgetMax}
-                        </span>
+                        </InlineText>
                       </div>
-                    </button>
+                    </Button>
                   );
                 })
               )}
@@ -1695,14 +1722,16 @@ function MatchingPage({
             className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-y-auto rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-indigo-50/30 to-violet-50/40 p-6 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <button
+            <Button
               type="button"
               onClick={() => setSelectedMatchId(null)}
+              variant="ghost"
+              size="icon"
               aria-label="Close profile details"
-              className="absolute right-4 top-4 z-10 rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              className="absolute right-4 top-4 z-10 h-9 w-9 rounded-full p-1.5 text-slate-400 hover:text-slate-700"
             >
               <X size={18} />
-            </button>
+            </Button>
             <div>
                 <div className="flex items-center gap-4">
                   <AvatarPreview
@@ -1711,56 +1740,56 @@ function MatchingPage({
                     size="lg"
                   />
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900">{selectedMatch.user.name}</h3>
-                    <p className="text-xs text-slate-500">
+                    <Heading level={3} className="text-xl font-bold text-slate-900">{selectedMatch.user.name}</Heading>
+                    <Paragraph className="text-xs text-slate-500">
                       {selectedMatch.profile?.occupationType ?? 'Flatmate candidate'}
-                    </p>
+                    </Paragraph>
                   </div>
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
                   {selectedMatch.eligible ? (
                     selectedMatch.compatibilityScore !== null ? (
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 border border-emerald-200/60">
+                      <InlineText className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 border border-emerald-200/60">
                         {selectedMatch.compatibilityScore}% compatibility
-                      </span>
+                      </InlineText>
                     ) : (
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 border border-slate-200/60">
+                      <InlineText className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 border border-slate-200/60">
                         Not enough data to score yet
-                      </span>
+                      </InlineText>
                     )
                   ) : selectedMatch.compatibilityScore !== null ? (
-                    <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700 border border-rose-200/60">
+                    <InlineText className="rounded-full bg-rose-50 px-3 py-1 text-rose-700 border border-rose-200/60">
                       {selectedMatch.compatibilityScore}% compatibility
-                    </span>
+                    </InlineText>
                   ) : (
-                    <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700 border border-rose-200/60">
+                    <InlineText className="rounded-full bg-rose-50 px-3 py-1 text-rose-700 border border-rose-200/60">
                       Not a match
-                    </span>
+                    </InlineText>
                   )}
-                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700 border border-indigo-200/60">
+                  <InlineText className="rounded-full bg-indigo-50 px-3 py-1 text-indigo-700 border border-indigo-200/60">
                     {selectedMatch.preference.city}
-                  </span>
-                  <span className={`rounded-full border px-3 py-1 ${
+                  </InlineText>
+                  <InlineText className={`rounded-full border px-3 py-1 ${
                     distanceStatus(selectedMatch).tone === 'distance'
                       ? 'border-sky-200/60 bg-sky-50 text-sky-700'
                       : 'border-slate-200 bg-slate-50 text-slate-500'
                   }`}>
                     {distanceStatus(selectedMatch).content}
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+                  </InlineText>
+                  <InlineText className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
                     {selectedMatch.preference.roomType}
-                  </span>
+                  </InlineText>
                 </div>
 
                 {!selectedMatch.eligible && selectedMatch.incompatibilityReasons?.length > 0 && (
                   <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50/60 p-4 text-xs text-rose-700">
-                    <p className="font-bold text-rose-800">Why this isn't a match</p>
+                    <Paragraph className="font-bold text-rose-800">Why this isn't a match</Paragraph>
                     <ul className="mt-1.5 space-y-1 leading-relaxed">
                       {selectedMatch.incompatibilityReasons.map((reason: string) => (
                         <li key={reason} className="flex gap-1.5">
-                          <span aria-hidden="true">•</span>
-                          <span>{reason}</span>
+                          <InlineText aria-hidden="true">•</InlineText>
+                          <InlineText>{reason}</InlineText>
                         </li>
                       ))}
                     </ul>
@@ -1773,16 +1802,16 @@ function MatchingPage({
 
                 <div className="mt-4 space-y-2.5 rounded-2xl bg-white/60 p-4 border border-slate-100 text-xs text-slate-600">
                   <div className="flex justify-between gap-3">
-                    <span className="font-medium text-slate-500">Distance apart:</span>
-                    <span className="text-right font-semibold text-slate-800">
+                    <InlineText className="font-medium text-slate-500">Distance apart:</InlineText>
+                    <InlineText className="text-right font-semibold text-slate-800">
                       {distanceStatus(selectedMatch).content}
                       {distanceStatus(selectedMatch).tone === 'noPin' &&
                         ' — both people need to pick a place from map suggestions in Preferences.'}
-                    </span>
+                    </InlineText>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-medium text-slate-500">Move-in Date:</span>
-                    <span className="font-semibold text-slate-800">
+                    <InlineText className="font-medium text-slate-500">Move-in Date:</InlineText>
+                    <InlineText className="font-semibold text-slate-800">
                       {selectedMatch.preference.moveInDate
                         ? new Date(selectedMatch.preference.moveInDate).toLocaleDateString([], {
                             month: 'short',
@@ -1790,25 +1819,25 @@ function MatchingPage({
                             year: 'numeric',
                           })
                         : 'Flexible'}
-                    </span>
+                    </InlineText>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-medium text-slate-500">Budget Range:</span>
-                    <span className="font-semibold text-slate-800">
+                    <InlineText className="font-medium text-slate-500">Budget Range:</InlineText>
+                    <InlineText className="font-semibold text-slate-800">
                       ₹{selectedMatch.preference.budgetMin} - ₹{selectedMatch.preference.budgetMax}
-                    </span>
+                    </InlineText>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-medium text-slate-500">Diet Preference:</span>
-                    <span className="font-semibold text-slate-800">
+                    <InlineText className="font-medium text-slate-500">Diet Preference:</InlineText>
+                    <InlineText className="font-semibold text-slate-800">
                       {selectedMatch.preference.foodPreference}
-                    </span>
+                    </InlineText>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-medium text-slate-500">Smoking:</span>
-                    <span className="font-semibold text-slate-800">
+                    <InlineText className="font-medium text-slate-500">Smoking:</InlineText>
+                    <InlineText className="font-semibold text-slate-800">
                       {selectedMatch.preference.smokingPreference}
-                    </span>
+                    </InlineText>
                   </div>
                 </div>
 
@@ -1818,13 +1847,15 @@ function MatchingPage({
               {/* Action Buttons */}
               <div className="mt-6 border-t border-slate-100 pt-4">
                 {existingConnection?.status === 'ACCEPTED' ? (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => onStartChat(selectedMatch.user.id)}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700"
+                    variant="primary"
+                    size="lg"
+                    className="w-full shadow-md shadow-indigo-200"
                   >
                     <MessageSquare size={16} /> Message {selectedMatch.user.name}
-                  </button>
+                  </Button>
                 ) : existingConnection?.status === 'PENDING' && !isOutgoingRequest ? (
                   <Link
                     to="/connections"
@@ -1833,25 +1864,27 @@ function MatchingPage({
                     Review incoming request
                   </Link>
                 ) : (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => void sendConnectionRequest()}
                     disabled={sendingRequest || Boolean(existingConnection)}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                    variant="primary"
+                    size="lg"
+                    className="w-full shadow-md shadow-indigo-200 disabled:bg-slate-300 disabled:shadow-none"
                   >
                     {sendingRequest ? (
-                      <span>Sending request...</span>
+                      <InlineText>Sending request...</InlineText>
                     ) : existingConnection?.status === 'PENDING' ? (
-                      <span>Request pending</span>
+                      <InlineText>Request pending</InlineText>
                     ) : existingConnection ? (
-                      <span>Request sent</span>
+                      <InlineText>Request sent</InlineText>
                     ) : (
                       <>
                         <Users size={16} />
-                        <span>Send connection request</span>
+                        <InlineText>Send connection request</InlineText>
                       </>
                     )}
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -1907,14 +1940,14 @@ function CompatibilityBreakdown({ match }: { match: any }) {
   return (
     <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="text-sm font-bold text-slate-900">
+        <Heading level={4} className="text-sm font-bold text-slate-900">
           {match.eligible ? 'Why this match' : 'Preference comparison'}
-        </h4>
-        <span className="text-[11px] text-slate-500">{match.comparedCount}/{match.totalCriteria} compared · {match.coveragePercent}% coverage</span>
+        </Heading>
+        <InlineText className="text-[11px] text-slate-500">{match.comparedCount}/{match.totalCriteria} compared · {match.coveragePercent}% coverage</InlineText>
       </div>
-      <p className="mt-1 text-[11px] text-slate-500">
+      <Paragraph className="mt-1 text-[11px] text-slate-500">
         Version {match.algorithmVersion} · Preference alignment, not a prediction of roommate success.
-      </p>
+      </Paragraph>
 
       {/* Always surface the common ground — even for people who are not an
           overall match (e.g. different city). A criterion counts as matching
@@ -1924,17 +1957,17 @@ function CompatibilityBreakdown({ match }: { match: any }) {
         <div className="mt-3 rounded-2xl border border-emerald-200/60 bg-emerald-50 p-4">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
-            <h5 className="text-sm font-bold text-emerald-800">
+            <Heading level={5} className="text-sm font-bold text-emerald-800">
               What's matching ({matchingComponents.length})
-            </h5>
+            </Heading>
           </div>
           <ul className="mt-2 space-y-1.5">
             {matchingComponents.map((component: any) => (
               <li key={component.key} className="flex items-start gap-2 text-xs text-emerald-800">
-                <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span className="leading-4">
-                  <span className="font-semibold">{component.label}:</span> {component.explanation}
-                </span>
+                <InlineText aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                <InlineText className="leading-4">
+                  <InlineText className="font-semibold">{component.label}:</InlineText> {component.explanation}
+                </InlineText>
               </li>
             ))}
           </ul>
@@ -1942,9 +1975,9 @@ function CompatibilityBreakdown({ match }: { match: any }) {
       ) : (
         <div className="mt-3 flex items-start gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500">
           <AlertCircle size={16} className="mt-0.5 shrink-0 text-slate-400" />
-          <span className="leading-4">
+          <InlineText className="leading-4">
             No shared preferences scored highly yet. The full comparison is below — anything not listed as matching may still be close or worth a conversation.
-          </span>
+          </InlineText>
         </div>
       )}
 
@@ -1952,26 +1985,26 @@ function CompatibilityBreakdown({ match }: { match: any }) {
         {match.breakdown.map((component: any) => (
           <div key={component.key}>
             <div className="flex items-center justify-between gap-2 text-xs">
-              <span className="font-semibold text-slate-800">
-                {component.label} <span className="font-normal text-slate-400">{component.weight}%</span>
-              </span>
-              <span className="shrink-0 text-slate-600">
+              <InlineText className="font-semibold text-slate-800">
+                {component.label} <InlineText className="font-normal text-slate-400">{component.weight}%</InlineText>
+              </InlineText>
+              <InlineText className="shrink-0 text-slate-600">
                 {component.score === null ? 'Not compared' : `${component.score}% · ${scoreLabel(component.score)}`}
-              </span>
+              </InlineText>
             </div>
             {component.score !== null && (
               <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
                 <div className="h-full rounded-full bg-indigo-500" style={{ width: `${component.score}%` }} />
               </div>
             )}
-            <p className="mt-1 text-[11px] leading-4 text-slate-500">{component.explanation}</p>
+            <Paragraph className="mt-1 text-[11px] leading-4 text-slate-500">{component.explanation}</Paragraph>
           </div>
         ))}
       </div>
 
       {match.notes.length > 0 && (
         <div className="mt-3 space-y-1 border-t border-slate-100 pt-3">
-          {match.notes.map((note: string) => <p key={note} className="text-[11px] leading-4 text-amber-800">{note}</p>)}
+          {match.notes.map((note: string) => <Paragraph key={note} className="text-[11px] leading-4 text-amber-800">{note}</Paragraph>)}
         </div>
       )}
     </section>
@@ -2128,142 +2161,144 @@ function GroupsPage({
             <Users size={22} />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Roommate Groups</h2>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <Heading level={2} className="text-2xl font-bold text-slate-900">Roommate Groups</Heading>
+            <Paragraph className="mt-0.5 text-xs text-slate-500">
               Form or join co-living groups moving to the same neighborhood and share a house together.
-            </p>
+            </Paragraph>
           </div>
         </div>
       </div>
 
       {/* Create Group Form */}
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs">
-        <h3 className="text-lg font-bold text-slate-900">Create a New Group</h3>
-        <p className="mt-0.5 text-xs text-slate-500">
+      <Surface variant="form">
+        <Heading level={3} className="text-lg font-bold text-slate-900">Create a New Group</Heading>
+        <Paragraph className="mt-0.5 text-xs text-slate-500">
           Start a team to house-hunt together for flats or apartments.
-        </p>
+        </Paragraph>
 
         <form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={onCreate}>
           <LocationAutocomplete
             onSelect={({ city, area }) => setForm((current) => ({ ...current, city, area }))}
           />
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Group Name *
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="subtle"
               required
               minLength={2}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
               placeholder="e.g. Madhapur Techies Flat"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Destination City *
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="readOnly"
               required
               readOnly
               value={form.city}
               placeholder="Filled from the place you select above"
-              className="w-full cursor-default rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Locality / Area *
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="readOnly"
               required
               readOnly
               value={form.area}
               placeholder="Filled from the place you select above"
-              className="w-full cursor-default rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2.5 text-sm text-slate-600 focus:border-indigo-500 focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Target Move-in Date
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="subtle"
               type="date"
               value={form.moveInDate}
               onChange={(e) => setForm({ ...form, moveInDate: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Individual Budget Min (₹)
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="subtle"
               type="number"
               min="0"
               step="500"
               value={form.budgetMin}
               onChange={(e) => setForm({ ...form, budgetMin: Number(e.target.value) })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Individual Budget Max (₹)
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="subtle"
               type="number"
               min="0"
               step="500"
               value={form.budgetMax}
               onChange={(e) => setForm({ ...form, budgetMax: Number(e.target.value) })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Target Total Members (2 to 10)
-            </label>
-            <input
+            </FormLabel>
+            <TextInput
+              variant="subtle"
               type="number"
               min="2"
               max="10"
               value={form.targetMembers}
               onChange={(e) => setForm({ ...form, targetMembers: Number(e.target.value) })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+            <FormLabel>
               Group Description & Flat Preferences
-            </label>
-            <textarea
+            </FormLabel>
+            <TextArea
+              variant="subtle"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="min-h-20 w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-sm text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
               placeholder="Tell others what kind of flat you're seeking (e.g. 3BHK, fully furnished, close to metro)..."
             />
           </div>
           <div className="sm:col-span-2">
-            <button
+            <Button
               type="submit"
               disabled={creating}
-              className="rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 disabled:opacity-50"
+              variant="primary"
+              size="lg"
+              className="shadow-md shadow-indigo-200"
             >
               {creating ? 'Creating group...' : 'Create Group'}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
+      </Surface>
 
       {pendingGroupRequests.length > 0 && (
         <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8">
           <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
-            <h3 className="text-lg font-bold text-slate-900">Pending Join Requests</h3>
-            <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+            <Heading level={3} className="text-lg font-bold text-slate-900">Pending Join Requests</Heading>
+            <Badge variant="count" tone="primary">
               {pendingGroupRequests.length}
-            </span>
+            </Badge>
           </div>
           <div className="mt-4 space-y-3">
             {pendingGroupRequests.map((request) => {
@@ -2276,33 +2311,35 @@ function GroupsPage({
                   className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">
+                    <Paragraph className="text-sm font-semibold text-slate-900">
                       {request.user?.name ?? 'A roommate'} requested to join{' '}
-                      <span className="text-indigo-700">{group?.name ?? 'your group'}</span>
-                    </p>
+                      <InlineText className="text-indigo-700">{group?.name ?? 'your group'}</InlineText>
+                    </Paragraph>
                     {group && (
-                      <p className="mt-1 text-xs text-slate-500">
+                      <Paragraph className="mt-1 text-xs text-slate-500">
                         {group.city}, {group.area}
-                      </p>
+                      </Paragraph>
                     )}
                   </div>
                   <div className="flex shrink-0 gap-2">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => void onHandleGroupRequest(request.groupId, request.id, 'ACCEPTED')}
                       disabled={handlingRequestId !== null}
-                      className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                      variant="success"
+                      size="compact"
                     >
                       {isHandling ? 'Updating...' : 'Accept'}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={() => void onHandleGroupRequest(request.groupId, request.id, 'REJECTED')}
                       disabled={handlingRequestId !== null}
-                      className="rounded-xl bg-rose-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-rose-600 disabled:opacity-50"
+                      variant="danger"
+                      size="compact"
                     >
                       Reject
-                    </button>
+                    </Button>
                   </div>
                 </div>
               );
@@ -2312,22 +2349,22 @@ function GroupsPage({
       )}
 
       {/* Available Groups List */}
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs">
+      <Surface variant="form">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Active Groups</h3>
-            <p className="mt-0.5 text-xs text-slate-500">Join existing groups looking for additional roommates.</p>
+            <Heading level={3} className="text-lg font-bold text-slate-900">Active Groups</Heading>
+            <Paragraph className="mt-0.5 text-xs text-slate-500">Join existing groups looking for additional roommates.</Paragraph>
           </div>
           <div className="relative sm:max-w-xs w-full">
             <Search size={15} className="absolute left-3.5 top-3 text-slate-400" />
-            <input
+            <TextInput
+              variant="search"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setGroupsPage(1);
               }}
               placeholder="Filter by city, area, or name..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 pl-9 pr-3.5 text-xs text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none"
             />
           </div>
         </div>
@@ -2352,35 +2389,35 @@ function GroupsPage({
                 >
                   <div className="bg-gradient-to-r from-indigo-600 to-violet-700 p-4 text-white">
                     <div className="flex items-center justify-between gap-2">
-                      <h4 className="font-bold text-base truncate">{group.name}</h4>
-                      <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold backdrop-blur-sm shrink-0">
+                      <Heading level={4} className="font-bold text-base truncate">{group.name}</Heading>
+                      <InlineText className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold backdrop-blur-sm shrink-0">
                         {group.members?.length ?? 1}/{group.targetMembers} members
-                      </span>
+                      </InlineText>
                     </div>
                     <div className="mt-1 flex items-center gap-1.5 text-xs text-indigo-100">
                       <MapPin size={12} />
-                      <span>
+                      <InlineText>
                         {group.city}, {group.area}
-                      </span>
+                      </InlineText>
                     </div>
                   </div>
 
                   <div className="p-4 flex-1 flex flex-col justify-between">
                     <div>
-                      <p className="text-xs text-slate-600 line-clamp-2">
+                      <Paragraph className="text-xs text-slate-600 line-clamp-2">
                         {group.description || 'Looking for compatible roommates to share an apartment.'}
-                      </p>
+                      </Paragraph>
 
                       <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50/80 p-2.5 text-xs text-slate-600 border border-slate-100">
-                        <span>Budget: ₹{group.budgetMin} - ₹{group.budgetMax}</span>
-                        <span>
+                        <InlineText>Budget: ₹{group.budgetMin} - ₹{group.budgetMax}</InlineText>
+                        <InlineText>
                           {group.moveInDate
                             ? new Date(group.moveInDate).toLocaleDateString([], {
                                 month: 'short',
                                 day: 'numeric',
                               })
                             : 'Flexible'}
-                        </span>
+                        </InlineText>
                       </div>
                     </div>
 
@@ -2398,13 +2435,15 @@ function GroupsPage({
                           Group Full
                         </div>
                       ) : (
-                        <button
+                        <Button
                           type="button"
                           onClick={() => onJoin(group.id)}
-                          className="w-full rounded-xl bg-indigo-600 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                          variant="primary"
+                          size="sm"
+                          className="w-full"
                         >
                           Request to join
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -2422,7 +2461,7 @@ function GroupsPage({
             label="Groups"
           />
         </div>
-      </div>
+      </Surface>
     </div>
   );
 }
@@ -2499,7 +2538,7 @@ function StatCard({
   return (
     <div className={`rounded-2xl border p-5 shadow-xs transition hover:shadow-sm ${tones[tone]}`}>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</span>
+        <InlineText className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</InlineText>
         {icon}
       </div>
       <div className="mt-3 text-3xl font-black text-slate-900">{value}</div>

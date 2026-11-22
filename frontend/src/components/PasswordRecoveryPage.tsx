@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Lock, Mail, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
+import { Button, FormLabel, Heading, InlineText, Paragraph, Surface, TextInput } from './ui';
 
 export default function PasswordRecoveryPage() {
   const [searchParams] = useSearchParams();
@@ -69,25 +70,25 @@ export default function PasswordRecoveryPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs">
             <Sparkles size={20} />
           </div>
-          <span className="text-2xl font-extrabold tracking-tight text-indigo-600">StayMate</span>
+          <InlineText className="text-2xl font-extrabold tracking-tight text-indigo-600">StayMate</InlineText>
         </Link>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+        <Heading level={1} className="text-xl sm:text-2xl font-bold text-slate-900">
           {isReset ? 'Create new password' : 'Reset your password'}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500 max-w-xs mx-auto">
+        </Heading>
+        <Paragraph className="mt-1 text-sm text-slate-500 max-w-xs mx-auto">
           {isReset
             ? 'Enter a secure new password for your StayMate account.'
             : 'Enter your email address and we will send a password reset link.'}
-        </p>
+        </Paragraph>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7 shadow-xs">
+      <Surface variant="authForm">
         {message ? (
           <div className="space-y-4 text-center py-2">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
               <CheckCircle2 size={24} />
             </div>
-            <p className="text-sm font-medium text-slate-700 leading-relaxed">{message}</p>
+            <Paragraph className="text-sm font-medium text-slate-700 leading-relaxed">{message}</Paragraph>
             {resetUrl && (
               <a
                 href={resetUrl}
@@ -100,7 +101,7 @@ export default function PasswordRecoveryPage() {
               to="/login"
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white shadow-xs transition hover:bg-indigo-700"
             >
-              <span>Back to sign in</span>
+              <InlineText>Back to sign in</InlineText>
               <ArrowRight size={16} />
             </Link>
           </div>
@@ -112,35 +113,38 @@ export default function PasswordRecoveryPage() {
                 className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs sm:text-sm font-medium text-rose-700"
               >
                 <AlertCircle size={16} className="mt-0.5 shrink-0 text-rose-600" />
-                <span className="flex-1">{error}</span>
-                <button
+                <InlineText className="flex-1">{error}</InlineText>
+                <Button
                   type="button"
                   onClick={() => setError('')}
-                  className="text-rose-400 hover:text-rose-600"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 rounded-none p-0 text-rose-400 hover:bg-transparent hover:text-rose-600"
                   aria-label="Dismiss error"
                 >
                   &times;
-                </button>
+                </Button>
               </div>
             )}
 
             {isReset && (
-              <p className="text-[11px] text-slate-400">
+              <Paragraph className="text-[11px] text-slate-400">
                 Choose a password with at least 8 characters.
-              </p>
+              </Paragraph>
             )}
 
             {isReset ? (
               <>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                  <FormLabel variant="auth">
                     New Password
-                  </label>
+                  </FormLabel>
                   <div className="relative">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                       <Lock size={18} />
                     </div>
-                    <input
+                    <TextInput
+                      variant="auth"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -148,21 +152,22 @@ export default function PasswordRecoveryPage() {
                       maxLength={128}
                       autoComplete="new-password"
                       required
-                      className="h-11 sm:h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                      className="pl-10"
                       placeholder="Min. 8 characters"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                  <FormLabel variant="auth">
                     Confirm New Password
-                  </label>
+                  </FormLabel>
                   <div className="relative">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                       <Lock size={18} />
                     </div>
-                    <input
+                    <TextInput
+                      variant="auth"
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -170,7 +175,7 @@ export default function PasswordRecoveryPage() {
                       maxLength={128}
                       autoComplete="new-password"
                       required
-                      className="h-11 sm:h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                      className="pl-10"
                       placeholder="Repeat password"
                     />
                   </div>
@@ -178,40 +183,43 @@ export default function PasswordRecoveryPage() {
               </>
             ) : (
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                <FormLabel variant="auth">
                   Email Address
-                </label>
+                </FormLabel>
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                     <Mail size={18} />
                   </div>
-                  <input
+                  <TextInput
+                    variant="auth"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
                     required
-                    className="h-11 sm:h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3.5 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                    className="pl-10"
                     placeholder="you@example.com"
                   />
                 </div>
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="mt-3 flex h-12 sm:h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white shadow-xs transition hover:bg-indigo-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+              variant="primary"
+              size="md"
+              className="mt-3 h-12 w-full sm:h-11"
             >
               {loading ? (
-                <span>Please wait...</span>
+                <InlineText>Please wait...</InlineText>
               ) : (
                 <>
-                  <span>{isReset ? 'Update password' : 'Send reset link'}</span>
+                  <InlineText>{isReset ? 'Update password' : 'Send reset link'}</InlineText>
                   <ArrowRight size={16} />
                 </>
               )}
-            </button>
+            </Button>
 
             <div className="pt-2 text-center">
               <Link
@@ -219,12 +227,12 @@ export default function PasswordRecoveryPage() {
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
               >
                 <ArrowLeft size={13} />
-                <span>Return to sign in</span>
+                <InlineText>Return to sign in</InlineText>
               </Link>
             </div>
           </form>
         )}
-      </div>
+      </Surface>
     </div>
   );
 }

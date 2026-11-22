@@ -34,12 +34,12 @@ body {
 @layer components {
   /* Unified Primary Button */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-all duration-150 hover:bg-indigo-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-indigo-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   /* Unified Secondary Button */
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-xs transition-all duration-150 hover:bg-slate-50 hover:border-slate-300 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-150 hover:bg-slate-50 hover:border-slate-300 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   /* Unified Input & Select Control */
@@ -49,7 +49,7 @@ body {
 
   /* Unified Surface Card */
   .surface-card {
-    @apply rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs;
+    @apply rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm;
   }
 
   /* Unified Badges */
