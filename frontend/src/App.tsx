@@ -1589,15 +1589,15 @@ function MatchingPage({
                       key={match.user.id}
                       type="button"
                       onClick={() => setSelectedMatchId(match.user.id)}
-                      className={`group flex flex-col justify-between rounded-2xl border bg-white p-5 text-left shadow-xs transition-all duration-200 ${
+                      className={`group flex w-full min-w-0 flex-col justify-between rounded-2xl border bg-white p-5 text-left shadow-xs transition-all duration-200 ${
                         isSelected
                           ? 'border-indigo-500 ring-2 ring-indigo-100 shadow-md'
                           : 'border-slate-200/80 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md'
                       }`}
                     >
                       <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-3">
+                        <div className="flex min-w-0 items-center justify-between gap-2">
+                          <div className="flex min-w-0 flex-1 items-center gap-3">
                             <AvatarPreview
                               name={match.user.name}
                               photo={match.profile?.profilePhoto}
@@ -1647,7 +1647,7 @@ function MatchingPage({
                         </p>
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
                         <span className="flex items-center gap-1 font-medium text-slate-700">
                           <MapPin size={12} className="text-indigo-600" />
                           {match.preference.city}
