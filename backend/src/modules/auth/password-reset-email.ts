@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
 
+const SMTP_TIMEOUT_MS = 10_000;
+
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   const host = process.env.SMTP_HOST;
   const from = process.env.SMTP_FROM;
@@ -17,6 +19,10 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
     host,
     port,
     secure: port === 465,
+    dnsTimeout: SMTP_TIMEOUT_MS,
+    connectionTimeout: SMTP_TIMEOUT_MS,
+    greetingTimeout: SMTP_TIMEOUT_MS,
+    socketTimeout: SMTP_TIMEOUT_MS,
     auth: process.env.SMTP_USER && process.env.SMTP_PASS
       ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
       : undefined,

@@ -48,6 +48,24 @@ describe('deriveCityArea (MapTiler)', () => {
     expect(deriveCityArea(madhapur)).toEqual({ city: 'Hyderabad', area: 'Madhapur' });
   });
 
+  it('extracts the city and area from a municipal-zone geocoding result', () => {
+    const madhapur = feature({
+      place_name: 'Madhapur Hyderabad India, Greater Hyderabad Municipal Corporation West Zone, Telangana, India',
+      text: 'Madhapur Hyderabad India',
+      place_type: ['place'],
+      context: [
+        { id: 'municipal_district.68310', text: 'Ward 104 Kondapur' },
+        { id: 'municipality.215238', text: 'Greater Hyderabad Municipal Corporation West Zone' },
+        { id: 'county.12438', text: 'Serilingampalle mandal' },
+        { id: 'subregion.512', text: 'Ranga Reddy' },
+        { id: 'region.1443', text: 'Telangana' },
+        { id: 'country.206', text: 'India' },
+      ],
+    });
+
+    expect(deriveCityArea(madhapur)).toEqual({ city: 'Hyderabad', area: 'Madhapur' });
+  });
+
   it('treats a city-level pick as both city and area', () => {
     const hyderabad = feature({
       place_name: 'Hyderabad, Telangana, India',

@@ -21,6 +21,8 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
   const [conversations, setConversations] = useState<any[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(initialConversationId ?? null);
   const [messages, setMessages] = useState<any[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
+  const [messagesError, setMessagesError] = useState('');
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -57,19 +59,30 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
   }, [initialConversationId]);
 
   useEffect(() => {
+    let active = true;
     if (!selectedConversationId) {
       setMessages([]);
+      setMessagesError('');
+      setMessagesLoading(false);
       return;
     }
 
+    setMessagesLoading(true);
+    setMessagesError('');
     void (async () => {
       try {
         const response = await api.getConversation(selectedConversationId);
-        setMessages(response.data?.messages ?? []);
+        if (active) setMessages(response.data?.messages ?? []);
       } catch {
-        setMessages([]);
+        if (active) setMessagesError('Could not load messages. Please refresh and try again.');
+      } finally {
+        if (active) setMessagesLoading(false);
       }
     })();
+
+    return () => {
+      active = false;
+    };
   }, [selectedConversationId]);
 
   useEffect(() => {
@@ -95,12 +108,23 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadConversations();
-    if (selectedConversationId) {
-      const response = await api.getConversation(selectedConversationId);
-      setMessages(response.data?.messages ?? []);
+    try {
+      await loadConversations();
+      if (selectedConversationId) {
+        setMessagesLoading(true);
+        setMessagesError('');
+        try {
+          const response = await api.getConversation(selectedConversationId);
+          setMessages(response.data?.messages ?? []);
+        } catch {
+          setMessagesError('Could not load messages. Please refresh and try again.');
+        } finally {
+          setMessagesLoading(false);
+        }
+      }
+    } finally {
+      setRefreshing(false);
     }
-    setRefreshing(false);
   };
 
   const sendMessage = async () => {
@@ -113,6 +137,7 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
       await api.sendMessage(selectedConversationId, content);
       const response = await api.getConversation(selectedConversationId);
       setMessages(response.data?.messages ?? []);
+      setMessagesError('');
       await loadConversations();
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Could not send message.');
@@ -168,7 +193,13 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
                 <button
                   key={conversation.id}
                   type="button"
-                  onClick={() => setSelectedConversationId(conversation.id)}
+                  onClick={() => {
+                    if (conversation.id !== selectedConversationId) {
+                      setMessagesLoading(true);
+                      setMessagesError('');
+                      setSelectedConversationId(conversation.id);
+                    }
+                  }}
                   className={`w-full rounded-2xl p-3 text-left transition-all duration-150 ${
                     isSelected
                       ? 'border border-indigo-200 bg-indigo-50/80 shadow-sm'
@@ -227,7 +258,16 @@ export default function ChatPanel({ user, initialConversationId }: ChatProps) {
 
             <div className="flex flex-1 flex-col justify-between">
               <div className="mb-4 flex-1 space-y-3 overflow-y-auto rounded-2xl bg-slate-50/80 p-4 border border-slate-100 max-h-[420px]">
-                {messages.length === 0 ? (
+                {messagesLoading ? (
+                  <div role="status" className="flex h-48 items-center justify-center text-xs text-slate-400">
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin text-indigo-600" />
+                    <span>Loading chat messages...</span>
+                  </div>
+                ) : messagesError ? (
+                  <div role="alert" className="flex h-48 items-center justify-center text-center text-xs text-rose-600">
+                    {messagesError}
+                  </div>
+                ) : messages.length === 0 ? (
                   <div className="flex h-48 flex-col items-center justify-center text-center text-xs text-slate-400">
                     <MessageSquare size={32} className="mb-2 text-slate-300" />
                     <span>No messages yet. Send a message to say hello!</span>

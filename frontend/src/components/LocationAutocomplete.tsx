@@ -24,7 +24,7 @@ const CITY_PLACE_TYPES = new Set(['city', 'town', 'village', 'municipality', 'lo
 // MapTiler context ids that represent a containing city. Note `place.` is a
 // neighborhood/locality record (e.g. "Officers Colony"), NOT a city, so it is
 // deliberately excluded here.
-const CITY_CONTEXT_PREFIXES = ['municipality', 'joint_municipality', 'city', 'town', 'village', 'locality'];
+const CITY_CONTEXT_PREFIXES = ['city', 'town', 'village', 'locality', 'joint_municipality', 'municipality'];
 
 // Rural picks (e.g. small villages) have no city parent. MapTiler reports a
 // county (mandal/taluk) and subregion (district) instead — the same fallback
@@ -32,7 +32,28 @@ const CITY_CONTEXT_PREFIXES = ['municipality', 'joint_municipality', 'city', 'to
 const RURAL_CONTEXT_PREFIXES = ['county', 'subregion'];
 
 function findContextText(feature: MapTilerFeature, ...typePrefixes: string[]) {
-  return feature.context?.find((item) => typePrefixes.some((prefix) => item.id.startsWith(`${prefix}.`)))?.text;
+  for (const prefix of typePrefixes) {
+    const item = feature.context?.find((context) => context.id.startsWith(`${prefix}.`));
+    if (item) return item.text;
+  }
+}
+
+function normalizeMunicipalityCity(text: string) {
+  return text
+    .replace(/^greater\s+/i, '')
+    .replace(/\s+(?:municipal\s+corporation|municipal\s+council|corporation)\b.*$/i, '')
+    .trim();
+}
+
+function deriveArea(text: string, city: string) {
+  const cityIndex = text.toLocaleLowerCase().lastIndexOf(city.toLocaleLowerCase());
+  if (cityIndex > 0) {
+    const area = text.slice(0, cityIndex).replace(/[,\s]+$/, '').trim();
+    if (area) return area;
+  }
+
+  const area = text.replace(new RegExp(`(?:,\\s*|\\s+)${city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'), '').trim();
+  return area || city;
 }
 
 // MapTiler geocoding returns the matched place plus its containing admin areas
@@ -45,12 +66,13 @@ function findContextText(feature: MapTilerFeature, ...typePrefixes: string[]) {
 // Area is the picked place, falling back to the city when they are the same.
 export function deriveCityArea(feature: MapTilerFeature): LocationSelection | null {
   const isCityFeature = feature.place_type.some((type) => CITY_PLACE_TYPES.has(type));
+  const cityContext = findContextText(feature, ...CITY_CONTEXT_PREFIXES);
   const city =
     (isCityFeature ? feature.text : undefined) ??
-    findContextText(feature, ...CITY_CONTEXT_PREFIXES) ??
+    (cityContext ? normalizeMunicipalityCity(cityContext) : undefined) ??
     findContextText(feature, ...RURAL_CONTEXT_PREFIXES);
   if (!city) return null;
-  const area = feature.text && feature.text !== city ? feature.text : city;
+  const area = feature.text ? deriveArea(feature.text, city) : city;
   // MapTiler GeoJSON coordinates are [longitude, latitude]. Pass the pin
   // through so the backend can compute real distance between two matches.
   const [longitude, latitude] = feature.geometry?.coordinates ?? [];

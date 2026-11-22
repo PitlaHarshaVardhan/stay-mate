@@ -46,7 +46,11 @@ export default function PasswordRecoveryPage() {
         setResetUrl(response.data?.resetUrl ?? '');
       }
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Could not complete this request.');
+      if (submitError instanceof Error && submitError.name === 'AbortError') {
+        setError('The password reset request timed out. Please try again later.');
+      } else {
+        setError(submitError instanceof Error ? submitError.message : 'Could not complete this request.');
+      }
     } finally {
       setLoading(false);
     }

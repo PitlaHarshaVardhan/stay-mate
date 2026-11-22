@@ -11,6 +11,7 @@ export type ApiResponse<T> = {
 const API_BASE = import.meta.env.PROD
   ? ''
   : (import.meta.env.VITE_API_URL || 'http://localhost:4000').replace(/\/$/, '');
+const PASSWORD_RESET_REQUEST_TIMEOUT_MS = 12_000;
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -37,10 +38,19 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
-  requestPasswordReset: (email: string) => request<{ resetUrl?: string }>('/api/auth/forgot-password', {
-    method: 'POST',
-    body: JSON.stringify({ email }),
-  }),
+  requestPasswordReset: async (email: string) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), PASSWORD_RESET_REQUEST_TIMEOUT_MS);
+    try {
+      return await request<{ resetUrl?: string }>('/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  },
   resetPassword: (token: string, password: string) => request<{ message: string }>('/api/auth/reset-password', {
     method: 'POST',
     body: JSON.stringify({ token, password }),
