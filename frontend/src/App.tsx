@@ -1989,9 +1989,11 @@ function GroupsPage({
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }) {
   const [groups, setGroups] = useState<any[]>([]);
+  const [groupRequests, setGroupRequests] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [groupsPage, setGroupsPage] = useState(1);
   const [creating, setCreating] = useState(false);
+  const [handlingRequestId, setHandlingRequestId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: '',
     city: '',
@@ -2012,8 +2014,18 @@ function GroupsPage({
     }
   };
 
+  const loadGroupRequests = async () => {
+    try {
+      const response = await api.getGroupRequests();
+      setGroupRequests(response.data ?? []);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Could not load group requests.', 'error');
+    }
+  };
+
   useEffect(() => {
     void loadGroups();
+    void loadGroupRequests();
   }, [userId]);
 
   const filteredGroups = groups.filter((group) => {
@@ -2030,6 +2042,7 @@ function GroupsPage({
     (currentGroupPage - 1) * PAGE_SIZE,
     currentGroupPage * PAGE_SIZE,
   );
+  const pendingGroupRequests = groupRequests.filter((request) => request.status === 'PENDING');
 
   const onCreate = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -2084,6 +2097,26 @@ function GroupsPage({
       showToast('Join request submitted to group owner!', 'success');
     } catch (error: any) {
       showToast(error.message || 'Could not join group.', 'error');
+    }
+  };
+
+  const onHandleGroupRequest = async (
+    groupId: string,
+    requestId: string,
+    status: 'ACCEPTED' | 'REJECTED',
+  ) => {
+    setHandlingRequestId(requestId);
+    try {
+      await api.handleGroupRequest(groupId, requestId, status);
+      await Promise.all([loadGroups(), loadGroupRequests()]);
+      showToast(
+        status === 'ACCEPTED' ? 'Join request accepted.' : 'Join request rejected.',
+        status === 'ACCEPTED' ? 'success' : 'info',
+      );
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Could not update the group request.', 'error');
+    } finally {
+      setHandlingRequestId(null);
     }
   };
 
@@ -2223,6 +2256,60 @@ function GroupsPage({
           </div>
         </form>
       </div>
+
+      {pendingGroupRequests.length > 0 && (
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <h3 className="text-lg font-bold text-slate-900">Pending Join Requests</h3>
+            <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+              {pendingGroupRequests.length}
+            </span>
+          </div>
+          <div className="mt-4 space-y-3">
+            {pendingGroupRequests.map((request) => {
+              const group = groups.find((item) => item.id === request.groupId);
+              const isHandling = handlingRequestId === request.id;
+
+              return (
+                <div
+                  key={request.id}
+                  className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {request.user?.name ?? 'A roommate'} requested to join{' '}
+                      <span className="text-indigo-700">{group?.name ?? 'your group'}</span>
+                    </p>
+                    {group && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        {group.city}, {group.area}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void onHandleGroupRequest(request.groupId, request.id, 'ACCEPTED')}
+                      disabled={handlingRequestId !== null}
+                      className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {isHandling ? 'Updating...' : 'Accept'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void onHandleGroupRequest(request.groupId, request.id, 'REJECTED')}
+                      disabled={handlingRequestId !== null}
+                      className="rounded-xl bg-rose-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-rose-600 disabled:opacity-50"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Available Groups List */}
       <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs">
