@@ -45,7 +45,7 @@ The backend loads `backend/.env.local` outside production, overriding any base `
 
 ## Production origins
 
-- Set `VITE_API_URL` in the frontend hosting environment to the deployed API origin, for example `https://api.yourdomain.com`.
+- Production frontend requests use the same-origin `/api/*` proxy in `vercel.json`; update its destination if the deployed API origin changes. Do not set `VITE_API_URL` for the Vercel production build.
 - Set `CLIENT_URL` in the backend hosting environment to the exact deployed frontend origin, for example `https://app.yourdomain.com`.
 - Set the backend `DATABASE_URL` to the production Neon connection string and `NODE_ENV=production` in the backend hosting environment.
 - Configure `SMTP_HOST`, `SMTP_PORT`, and `SMTP_FROM` on the backend to deliver password reset emails. Set `SMTP_USER` and `SMTP_PASS` too when your SMTP provider requires authentication.

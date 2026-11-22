@@ -8,7 +8,9 @@ export type ApiResponse<T> = {
   };
 };
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:4000').replace(/\/$/, '');
+const API_BASE = import.meta.env.PROD
+  ? ''
+  : (import.meta.env.VITE_API_URL || 'http://localhost:4000').replace(/\/$/, '');
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const response = await fetch(`${API_BASE}${path}`, {
