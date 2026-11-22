@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://stay-mate-dqos.onrender.com/api/$1" },
+    { "source": "/api/:path*", "destination": "https://stay-mate-dqos.onrender.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
